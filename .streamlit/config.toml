@@ -1,0 +1,7 @@
+[theme]
+# Modern, clean palette with a teal-blue accent
+primaryColor = "#2A9D8F"        # Vibrant teal (accent for buttons, highlights)
+backgroundColor = "#1E1F26"     # Dark charcoal (main background)
+secondaryBackgroundColor = "#2D2E35"  # Slightly lighter gray for cards/containers
+textColor = "#E0E0E2"           # Off-white for readability
+font = "sans serif"
