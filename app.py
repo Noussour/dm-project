@@ -1,38 +1,38 @@
 """
-Application Streamlit pour comparer des algorithmes de clustering et de classification.
+Streamlit application to compare clustering and classification algorithms.
 
-Exécution: `streamlit run app.py`
+Execution: `streamlit run app.py`
 
-Structure du projet:
-├── app.py              # Point d'entrée principal
-├── config/             # Configuration et constantes
-│   ├── settings.py     # Configuration Streamlit
-│   └── constants.py    # Constantes de l'application
-├── utils/              # Fonctions utilitaires
-│   ├── data_loader.py  # Chargement et validation des données
-│   └── metrics.py      # Métriques de clustering
-├── clustering/         # Algorithmes de clustering
-│   ├── algorithms.py   # Orchestrateur principal
+Project Structure:
+├── app.py              # Main entry point
+├── config/             # Configuration and constants
+│   ├── settings.py     # Streamlit configuration
+│   └── constants.py    # Application constants
+├── utils/              # Utility functions
+│   ├── data_loader.py  # Data loading and validation
+│   └── metrics.py      # Clustering metrics
+├── clustering/         # Clustering algorithms
+│   ├── algorithms.py   # Main orchestrator
 │   ├── kmeans.py       # K-Means
 │   ├── kmedoids.py     # K-Medoids (PAM)
 │   ├── dbscan.py       # DBSCAN
 │   ├── agnes.py        # AGNES (Agglomerative Nesting)
 │   └── diana.py        # DIANA (Divisive Analysis)
-├── classification/     # Algorithmes de classification
-│   ├── algorithms.py   # Orchestrateur principal
+├── classification/     # Classification algorithms
+│   ├── algorithms.py   # Main orchestrator
 │   ├── knn.py          # k-Nearest Neighbors
 │   ├── naive_bayes.py  # Naive Bayes
 │   ├── decision_tree.py # C4.5 Decision Tree
 │   ├── svm.py          # Support Vector Machine
-│   └── metrics.py      # Métriques de classification
-├── visualization/      # Visualisation
-│   ├── plots.py        # Fonctions de tracé
-│   └── colors.py       # Gestion des couleurs
-└── components/         # Composants UI Streamlit
-    ├── sidebar.py      # Sidebar clustering
-    ├── classification_sidebar.py  # Sidebar classification
-    ├── tabs.py         # Onglets clustering
-    └── classification_tabs.py     # Onglets classification
+│   └── metrics.py      # Classification metrics
+├── visualization/      # Visualization
+│   ├── plots.py        # Plotting functions
+│   └── colors.py       # Color management
+└── components/         # Streamlit UI Components
+    ├── sidebar.py      # Clustering sidebar
+    ├── classification_sidebar.py  # Classification sidebar
+    ├── tabs.py         # Clustering tabs
+    └── classification_tabs.py     # Classification tabs
 """
 
 from datetime import datetime
@@ -91,7 +91,7 @@ def init_session_state():
     if "selected_dataset_key" not in st.session_state:
         st.session_state["selected_dataset_key"] = None
     if "active_section" not in st.session_state:
-        st.session_state["active_section"] = "Prétraitement"
+        st.session_state["active_section"] = "Preprocessing"
     if "classification_results" not in st.session_state:
         st.session_state["classification_results"] = {}
 
@@ -112,7 +112,7 @@ def execute_clustering(df, selected_features, algo_choice, algo_params, dataset_
     
     # Validate all features are numeric
     if not all(np.issubdtype(X[c].dtype, np.number) for c in X.columns):
-        st.error("❌ Toutes les features sélectionnées doivent être numériques.")
+        st.error("❌ All selected features must be numeric.")
         return
     
     # Validate algorithm compatibility with dataset
@@ -122,7 +122,7 @@ def execute_clustering(df, selected_features, algo_choice, algo_params, dataset_
     
     if not is_valid:
         for msg in validation_messages:
-            if "valeur(s) manquante(s)" in msg.lower():
+            if "valeur(s) manquante(s)" in msg.lower() or "missing value" in msg.lower():
                 st.error(f"❌ {msg}")
             else:
                 st.error(f"❌ {msg}")
@@ -130,7 +130,7 @@ def execute_clustering(df, selected_features, algo_choice, algo_params, dataset_
     
     # Show warnings if any
     for msg in validation_messages:
-        if "valeur(s) manquante(s)" not in msg.lower():
+        if "valeur(s) manquante(s)" not in msg.lower() and "missing value" not in msg.lower():
             st.warning(f"⚠️ {msg}")
     
     # Validate clustering parameters against data size
@@ -143,7 +143,7 @@ def execute_clustering(df, selected_features, algo_choice, algo_params, dataset_
         return
     
     try:
-        st.info(f"🚀 Lancement de {algo_choice} ...")
+        st.info(f"🚀 Launching {algo_choice} ...")
         result = run_clustering(algo_choice, algo_params, X)
         
         # Create clean run identifier
@@ -182,10 +182,10 @@ def execute_clustering(df, selected_features, algo_choice, algo_params, dataset_
             "dataset": dataset_name,
         }
         
-        st.success(f"{algo_choice} exécuté - résultats: {ident}")
+        st.success(f"{algo_choice} executed - results: {ident}")
         
     except Exception as e:
-        st.error(f"Erreur lors de l'exécution: {e}")
+        st.error(f"Error during execution: {e}")
 
 
 def main():
@@ -194,12 +194,12 @@ def main():
     init_session_state()
 
     # Ensure active section default
-    st.session_state.setdefault("active_section", "Prétraitement")
+    st.session_state.setdefault("active_section", "Preprocessing")
 
     # File upload + validation
     df, dataset_name = render_file_upload()
     if df is None:
-        st.warning("Veuillez charger un dataset via la sidebar (fichier ou dataset prédéfini).")
+        st.warning("Please load a dataset via the sidebar (file or predefined dataset).")
         st.stop()
 
     is_valid, error_msg = validate_dataframe(df)
@@ -221,10 +221,24 @@ def main():
     split_config = {}
 
     # Sidebar behavior per active section
-    if st.session_state["active_section"] == "Prétraitement":
+    # Sidebar behavior per active section
+    if st.session_state["active_section"] == "Prétraitement" or st.session_state["active_section"] == "Preprocessing":
+        # Keep internal state key as "Prétraitement" if that's what's used, or migrate it.
+        # But for now let's just assume we translate the string value in the session state later or just handle both.
+        # Ideally, we should unify the key, but "active_section" is used as a string.
+        # Let's change the comparison to English if we change the state value.
+        pass # I will handle the session state value change logic in the Navigation section below to avoid mismatch.
+        # Actually, let's just stick to the current French keys for logic if we don't want to break things, 
+        # BUT the user wants 100% translation. So I should probably change the keys too or at least the display.
+        # Only the UI text needs to be English. The internal keys can remain French if it's too risky, 
+        # but "active_section" value is used for logic AND display usually?
+        # Let's check lines 265-275. Buttons set `st.session_state["active_section"]`.
+        # So I will translate the values: "Preprocessing", "Clustering", "Classification".
+        
+    if st.session_state["active_section"] == "Preprocessing":
         selected_features = render_feature_selection(df)
         if len(selected_features) < 1:
-            st.sidebar.error("Sélectionnez au moins 1 feature numérique.")
+            st.sidebar.error("Select at least 1 numeric feature.")
             st.stop()
 
     elif st.session_state["active_section"] == "Clustering":
@@ -244,12 +258,12 @@ def main():
 
         target_col = render_target_selection(df_for_classification)
         if target_col is None:
-            st.sidebar.error("Sélectionnez une variable cible.")
+            st.sidebar.error("Select a target variable.")
             st.stop()
 
         selected_features = render_feature_selection_classification(df_for_classification, target_col)
         if len(selected_features) == 0:
-            st.sidebar.error("Sélectionnez au moins une feature.")
+            st.sidebar.error("Select at least one feature.")
             st.stop()
 
         split_config = render_train_test_split()
@@ -262,19 +276,19 @@ def main():
     nav_col1, nav_col2, nav_col3 = st.sidebar.columns(3)
 
     with nav_col1:
-        if st.button("Prétrait.", use_container_width=True, key="nav_preprocess", disabled=st.session_state["active_section"] == "Prétraitement"):
-            st.session_state["active_section"] = "Prétraitement"
+        if st.button("Preprocess", use_container_width=True, key="nav_preprocess", disabled=st.session_state["active_section"] == "Preprocessing"):
+            st.session_state["active_section"] = "Preprocessing"
             st.rerun()
     with nav_col2:
         if st.button("Cluster", use_container_width=True, key="nav_clustering", disabled=st.session_state["active_section"] == "Clustering"):
             st.session_state["active_section"] = "Clustering"
             st.rerun()
     with nav_col3:
-        if st.button("Classif.", use_container_width=True, key="nav_classification", disabled=st.session_state["active_section"] == "Classification"):
+        if st.button("Classify", use_container_width=True, key="nav_classification", disabled=st.session_state["active_section"] == "Classification"):
             st.session_state["active_section"] = "Classification"
             st.rerun()
 
-    if st.sidebar.button("Réinitialiser", use_container_width=True, key="btn_reset_session"):
+    if st.sidebar.button("Reset", use_container_width=True, key="btn_reset_session"):
         st.session_state.clear()
         st.cache_data.clear()
         st.rerun()
@@ -282,9 +296,9 @@ def main():
     # Main content dispatch
     df_processed = df.copy()
 
-    if st.session_state["active_section"] == "Prétraitement":
-        st.title("Prétraitement des données")
-        st.markdown("*Application pédagogique de Data Mining*")
+    if st.session_state["active_section"] == "Preprocessing":
+        st.title("Data Preprocessing")
+        st.markdown("*Educational Data Mining Application*")
         st.markdown("---")
 
         current_dataset = df.copy()
@@ -295,25 +309,25 @@ def main():
 
         if current_dataset.isnull().values.any():
             missing_count = current_dataset.isnull().sum().sum()
-            st.warning(f"Le dataset contient **{missing_count}** valeur(s) manquante(s). Utilisez les options ci-dessous pour nettoyer le dataset.")
+            st.warning(f"The dataset contains **{missing_count}** missing value(s). Use the options below to clean the dataset.")
 
         st.session_state["selected_features_for_clustering"] = selected_features
         df_processed, _ = render_preprocessing(df, selected_features)
 
         if st.session_state.get("preprocessed_datasets"):
-            st.markdown("### Datasets prétraités disponibles")
+            st.markdown("### Available Preprocessed Datasets")
             keys = list(st.session_state["preprocessed_datasets"].keys())
-            selected_preprocessed = st.selectbox("Sélectionnez un dataset prétraité", keys, index=len(keys) - 1, key="select_preprocessed_dataset", format_func=lambda k: f"{k} (shape: {st.session_state['preprocessed_datasets'][k].shape})")
+            selected_preprocessed = st.selectbox("Select a preprocessed dataset", keys, index=len(keys) - 1, key="select_preprocessed_dataset", format_func=lambda k: f"{k} (shape: {st.session_state['preprocessed_datasets'][k].shape})")
             if selected_preprocessed:
                 df_processed = st.session_state["preprocessed_datasets"][selected_preprocessed]
-                st.success(f"Utilisation du dataset: `{selected_preprocessed}`")
+                st.success(f"Using dataset: `{selected_preprocessed}`")
 
     elif st.session_state["active_section"] == "Clustering":
-        st.title("Comparateur d'algorithmes de Clustering")
+        st.title("Clustering Algorithms Comparator")
         st.markdown("*Data Mining: K-Means, K-Medoids, DBSCAN, AGNES, DIANA*")
 
         df_processed = df.copy()
-        selected_dataset_name = "dataset uploadé"
+        selected_dataset_name = "uploaded dataset"
         selected_dataset_key = st.session_state.get("selected_dataset_key")
         if st.session_state.get("preprocessed_datasets"):
             if selected_dataset_key and selected_dataset_key in st.session_state["preprocessed_datasets"]:
@@ -328,12 +342,12 @@ def main():
         has_missing_values = df_processed[selected_features].isnull().values.any() if selected_features else df_processed.isnull().values.any()
         if has_missing_values:
             missing_count = df_processed[selected_features].isnull().sum().sum() if selected_features else df_processed.isnull().sum().sum()
-            st.error(f"❌ Le dataset contient **{missing_count}** valeur(s) manquante(s) dans les features sélectionnées. "
-                    "Les algorithmes de clustering ne peuvent pas fonctionner avec des valeurs manquantes.")
-            st.info("💡 **Solution**: Retournez à la section **Prétraitement** et utilisez une stratégie pour gérer les valeurs manquantes "
-                   "(suppression, imputation par moyenne/médiane/mode, etc.)")
+            st.error(f"❌ The dataset contains **{missing_count}** missing value(s) in the selected features. "
+                    "Clustering algorithms cannot work with missing values.")
+            st.info("💡 **Solution**: Return to the **Preprocessing** section and use a strategy to handle missing values "
+                   "(deletion, imputation by mean/median/mode, etc.)")
             # Block execution but still show tabs for viewing previous results
-            tabs = st.tabs(["Visualisation 2D/3D", "Métriques", "Graphiques"])
+            tabs = st.tabs(["2D/3D Visualization", "Metrics", "Charts"])
             with tabs[0]:
                 render_visualization_tab(df_processed, selected_features)
             with tabs[1]:
@@ -343,16 +357,16 @@ def main():
             st.stop()
 
         if df_processed.shape[0] > MAX_3D_POINTS:
-            st.sidebar.info(f"Pour la visualisation 3D, échantillonnage à {MAX_3D_POINTS} points.")
+            st.sidebar.info(f"For 3D visualization, sampling to {MAX_3D_POINTS} points.")
 
         if best_params_clicked:
             best_algo_params = calculate_best_parameters(algo_choice, df_processed, selected_features)
-            st.info(f"**Meilleurs paramètres pour {algo_choice}:** {best_algo_params}")
+            st.info(f"**Best parameters for {algo_choice}:** {best_algo_params}")
             execute_clustering(df_processed, selected_features, algo_choice, best_algo_params, dataset_name, use_best_params=True)
         elif run_clicked:
             execute_clustering(df_processed, selected_features, algo_choice, algo_params, dataset_name, use_best_params=False)
 
-        tabs = st.tabs(["Visualisation 2D/3D", "Métriques", "Graphiques"])
+        tabs = st.tabs(["2D/3D Visualization", "Metrics", "Charts"])
         with tabs[0]:
             render_visualization_tab(df_processed, selected_features)
         with tabs[1]:
@@ -361,13 +375,13 @@ def main():
             render_charts_tab(df_processed, selected_features)
 
     elif st.session_state["active_section"] == "Classification":
-        st.title("Classification Supervisée")
+        st.title("Supervised Classification")
         st.markdown("*Data Mining: k-NN, Naive Bayes, C4.5, SVM*")
 
         df_processed = df.copy()
         if st.session_state.get("preprocessed_datasets"):
             keys = list(st.session_state["preprocessed_datasets"].keys())
-            selected_preprocessed = st.selectbox("Sélectionnez un dataset prétraité", keys, index=len(keys) - 1, key="select_preprocessed_dataset_classification", format_func=lambda k: f"{k} (shape: {st.session_state['preprocessed_datasets'][k].shape})")
+            selected_preprocessed = st.selectbox("Select a preprocessed dataset", keys, index=len(keys) - 1, key="select_preprocessed_dataset_classification", format_func=lambda k: f"{k} (shape: {st.session_state['preprocessed_datasets'][k].shape})")
             if selected_preprocessed:
                 df_processed = st.session_state["preprocessed_datasets"][selected_preprocessed]
 
@@ -379,12 +393,12 @@ def main():
                 selected_features.remove(target_col)
 
         if target_col not in df_processed.columns:
-            st.error(f"La variable cible '{target_col}' n'existe pas dans le dataset prétraité. Veuillez retourner au prétraitement ou sélectionner un autre dataset.")
+            st.error(f"The target variable '{target_col}' does not exist in the preprocessed dataset. Please return to preprocessing or select another dataset.")
             st.stop()
 
         if df_processed.isnull().values.any():
             missing_count = df_processed.isnull().sum().sum()
-            st.warning(f"Le dataset contient **{missing_count}** valeur(s) manquante(s).")
+            st.warning(f"The dataset contains **{missing_count}** missing value(s).")
 
         st.markdown("---")
 
@@ -394,17 +408,17 @@ def main():
             render_classification_results_tab(df_processed, selected_features, target_col, split_config, classifier_choice, classifier_params)
         else:
             st.info("""
-            **Instructions :**
-            1. Sélectionnez la variable cible (classe) dans la sidebar
-            2. Configurez le partitionnement (80% apprentissage, 20% test)
-            3. Choisissez un algorithme de classification
-            4. Cliquez sur **Classifier** pour exécuter, ou **Comparer tous** pour comparer tous les algorithmes
+            **Instructions:**
+            1. Select the target variable (class) in the sidebar
+            2. Configure the partition (80% training, 20% test)
+            3. Choose a classification algorithm
+            4. Click on **Classify** to execute, or **Compare All** to compare all algorithms
             
-            **Algorithmes disponibles:**
-            - **k-NN** : k plus proches voisins (k = 1 à 10)
-            - **Naive Bayes** : Classifieur bayésien naïf
-            - **C4.5** : Arbre de décision (gain d'information)
-            - **SVM** : Machine à vecteurs de support
+            **Available Algorithms:**
+            - **k-NN** : k Nearest Neighbors (k = 1 to 10)
+            - **Naive Bayes** : Naive Bayes Classifier
+            - **C4.5** : Decision Tree (information gain)
+            - **SVM** : Support Vector Machine
             """)
 
 

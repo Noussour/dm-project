@@ -204,7 +204,7 @@ def format_confusion_matrix_display(cm: np.ndarray, labels: list = None) -> str:
     
     # Combine
     lines = [
-        "Matrice de Confusion",
+        "Confusion Matrix",
         "=" * len(header),
         "Predicted →",
         header,

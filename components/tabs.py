@@ -64,39 +64,39 @@ def render_visualization_tab(df: pd.DataFrame, selected_features: list[str]):
     """
     from utils.data_loader import validate_visualization_compatibility
     
-    st.subheader("Visualisation interactive")
+    st.subheader("Interactive Visualization")
     
     # Validate minimum features for visualization
     if len(selected_features) < 2:
-        st.error("❌ La visualisation nécessite au moins 2 features sélectionnées.")
-        st.info("💡 Retournez au prétraitement et sélectionnez au moins 2 features numériques.")
+        st.error("❌ Visualization requires at least 2 selected features.")
+        st.info("💡 Return to preprocessing and select at least 2 numeric features.")
         return
     
     st.markdown(
-        "Choisissez les axes X / Y / (optionnel Z) parmi les features numériques sélectionnées."
+        "Choose X / Y (optional Z) axes from selected numeric features."
     )
     
     # Axis selection
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        x_axis = st.selectbox("Axe X", selected_features, index=0)
+        x_axis = st.selectbox("X Axis", selected_features, index=0)
     with col2:
-        y_axis = st.selectbox("Axe Y", selected_features, index=1 if len(selected_features) > 1 else 0)
+        y_axis = st.selectbox("Y Axis", selected_features, index=1 if len(selected_features) > 1 else 0)
     with col3:
         # Z axis with option to disable 3D (None = 2D only)
         if len(selected_features) >= 3:
             z_options = [None] + selected_features
-            z_default_index = 0  # Default to "Désactiver 3D"
+            z_default_index = 0  # Default to "Disable 3D"
             z_axis = st.selectbox(
-                "Axe Z (3D)",
+                "Z Axis (3D)",
                 z_options,
                 index=z_default_index,
-                format_func=lambda x: "Désactiver 3D" if x is None else x
+                format_func=lambda x: "Disable 3D" if x is None else x
             )
         else:
             z_axis = None
-            st.info("📊 3D désactivé (nécessite 3+ features)")
+            st.info("📊 3D disabled (requires 3+ features)")
     
     z_option = z_axis is not None
     
@@ -114,7 +114,7 @@ def render_visualization_tab(df: pd.DataFrame, selected_features: list[str]):
     runs = get_results_list()
     
     if len(runs) == 0:
-        st.info("ℹ️ Aucune exécution de clustering stockée. Lancez un algorithme via la sidebar.")
+        st.info("ℹ️ No stored clustering run. Launch an algorithm via the sidebar.")
         return
     
     # Filter runs compatible with current dataset
@@ -122,15 +122,15 @@ def render_visualization_tab(df: pd.DataFrame, selected_features: list[str]):
     
     if len(compatible_runs) == 0:
         st.warning(
-            "Aucun run compatible avec le dataset actuel. "
-            "Les runs précédents utilisaient des features différentes. "
-            "Exécutez un nouveau clustering sur ce dataset."
+            "No run compatible with current dataset. "
+            "Previous runs used different features. "
+            "Execute a new clustering on this dataset."
         )
         return
     
     # Run selection (only compatible runs)
     sel = st.selectbox(
-        "Choisir un run à afficher",
+        "Choose a run to display",
         options=compatible_runs,
         format_func=lambda k: f"{k} — {st.session_state['results'][k]['result']['algo']} ({st.session_state['results'][k]['dataset']})"
     )
@@ -142,7 +142,7 @@ def render_visualization_tab(df: pd.DataFrame, selected_features: list[str]):
     # Prepare plot data
     vis_sample = df[selected_features]
     if vis_sample.shape[0] > MAX_3D_POINTS:
-        st.info(f"Pour la visualisation, l'affichage est échantillonné à {MAX_3D_POINTS} points.")
+        st.info(f"For visualization, sampling to {MAX_3D_POINTS} points.")
         plot_df = vis_sample.sample(MAX_3D_POINTS, random_state=42)
     else:
         plot_df = vis_sample.copy()
@@ -161,14 +161,14 @@ def render_visualization_tab(df: pd.DataFrame, selected_features: list[str]):
         fig = create_3d_scatter(
             plot_df, x_axis, y_axis, z_axis,
             labels_plot,
-            f"{res['algo']} — Visualisation 3D ({sel})",
+            f"{res['algo']} — 3D Visualization ({sel})",
             centroids, features_used
         )
     else:
         fig = create_2d_scatter(
             plot_df, x_axis, y_axis,
             labels_plot,
-            f"{res['algo']} — Visualisation 2D ({sel})",
+            f"{res['algo']} — 2D Visualization ({sel})",
             centroids, features_used
         )
     
@@ -176,30 +176,30 @@ def render_visualization_tab(df: pd.DataFrame, selected_features: list[str]):
     
     # Legend and help
     st.markdown(
-        "**Légende** : chaque symbole/valeur de couleur représente un cluster. "
-        "Le gris indique souvent le bruit (DBSCAN)."
+        "**Legend** : each symbol/color represents a cluster. "
+        "Gray often indicates noise (DBSCAN)."
     )
     
-    with st.expander("Définitions rapides des métriques (clic pour ouvrir)"):
+    with st.expander("Quick Metric Definitions (click to open)"):
         st.markdown("""
-**Silhouette Score** — mesure de cohésion / séparation. Valeur dans [-1,1], plus élevé = meilleure séparation.
+**Silhouette Score** — measure of cohesion / separation. Value in [-1,1], higher = better separation.
 
-**Calinski-Harabasz** — ratio variance inter / intra-cluster (plus élevé = mieux).
+**Calinski-Harabasz** — ratio of inter / intra-cluster variance (higher = better).
 
-**Davies-Bouldin** — moyenne similarité intra- / inter-cluster (plus faible = mieux).
+**Davies-Bouldin** — average intra- / inter-cluster similarity (lower = better).
 
-**Inertie (WCSS)** — somme des carrés des distances intra-cluster (plus faible = clusters plus compacts).
+**Inertia (WCSS)** — sum of intra-cluster squared distances (lower = more compact clusters).
 """)
 
 
 def render_metrics_tab():
     """Render the metrics comparison tab."""
-    st.subheader("Comparaison quantitative des runs stockés")
+    st.subheader("Quantitative comparison of stored runs")
     
     runs = get_results_list()
     
     if len(runs) == 0:
-        st.info("Aucun résultat stocké. Exécutez au moins un algorithme pour comparer.")
+        st.info("No stored results. Run at least one algorithm to compare.")
         return
     
     # Build summary DataFrame for metrics
@@ -238,17 +238,17 @@ def render_metrics_tab():
     params_df = pd.DataFrame(params_rows)
     
     # Display metrics table
-    st.markdown("### Tableau des métriques d'évaluation")
-    st.markdown("*↑ = plus élevé = mieux, ↓ = plus faible = mieux*")
+    st.markdown("### Evaluation Metrics Table")
+    st.markdown("*↑ = higher = better, ↓ = lower = better*")
     st.dataframe(metrics_df, width='stretch', hide_index=True)
     
     # Display parameters table
-    st.markdown("### Tableau des paramètres utilisés")
+    st.markdown("### Used Parameters Table")
     st.dataframe(params_df, width='stretch', hide_index=True)
     
     # Side-by-side comparison
     st.markdown("---")
-    st.markdown("### Comparaison side-by-side")
+    st.markdown("### Side-by-side Comparison")
     colA, colB = st.columns(2)
     keys = list(st.session_state["results"].keys())
     
@@ -273,9 +273,9 @@ def render_metrics_tab():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("**Métriques**")
+        st.markdown("**Metrics**")
         comp_metrics_df = pd.DataFrame({
-            "Métrique": ["N° Clusters effectifs", "Silhouette ↑", "Calinski-Harabasz ↑", "Davies-Bouldin ↓", "Inertie (WCSS) ↓"],
+            "Metric": ["Effective Clusters", "Silhouette ↑", "Calinski-Harabasz ↑", "Davies-Bouldin ↓", "Inertia (WCSS) ↓"],
             f"Run A ({rA['algo']})": [
                 n_clusters_from_labels(rA.get("labels", np.array([]))),
                 round(mA.get("silhouette"), 4) if mA.get("silhouette") else "N/A",
@@ -294,13 +294,13 @@ def render_metrics_tab():
         st.table(comp_metrics_df)
     
     with col2:
-        st.markdown("**Paramètres**")
+        st.markdown("**Parameters**")
         # Collect all unique parameter names
         all_params = set(pA.keys()) | set(pB.keys())
         param_rows = []
         for param in sorted(all_params):
             param_rows.append({
-                "Paramètre": param,
+                "Parameter": param,
                 f"Run A ({rA['algo']})": pA.get(param, "N/A"),
                 f"Run B ({rB['algo']})": pB.get(param, "N/A"),
             })
@@ -308,7 +308,7 @@ def render_metrics_tab():
             comp_params_df = pd.DataFrame(param_rows)
             st.table(comp_params_df)
         else:
-            st.info("Aucun paramètre à comparer.")
+            st.info("No parameters to compare.")
 
 
 def render_charts_tab(df: pd.DataFrame, selected_features: list[str]):
@@ -322,12 +322,12 @@ def render_charts_tab(df: pd.DataFrame, selected_features: list[str]):
     from utils.data_loader import validate_visualization_compatibility
     from config.constants import VISUALIZATION_CONSTRAINTS
     
-    st.subheader("Graphiques complémentaires")
+    st.subheader("Additional Charts")
     
     runs = get_results_list()
     
     if len(runs) == 0:
-        st.info("ℹ️ Exécutez des algorithmes pour générer ces graphiques.")
+        st.info("ℹ️ Run algorithms to generate these charts.")
         return
     
     # Filter runs compatible with current dataset
@@ -335,15 +335,15 @@ def render_charts_tab(df: pd.DataFrame, selected_features: list[str]):
     
     if len(compatible_runs) == 0:
         st.warning(
-            "⚠️ Aucun run compatible avec le dataset actuel. "
-            "Les runs précédents utilisaient des features différentes. "
-            "Exécutez un nouveau clustering sur ce dataset."
+            "⚠️ No run compatible with current dataset. "
+            "Previous runs used different features. "
+            "Execute a new clustering on this dataset."
         )
         return
     
     # Run selection (only compatible runs)
     sel_run = st.selectbox(
-        "Choisir un run pour les graphiques",
+        "Choose a run for charts",
         options=compatible_runs,
         format_func=lambda k: f"{k} — {st.session_state['results'][k]['result']['algo']}"
     )
@@ -355,8 +355,9 @@ def render_charts_tab(df: pd.DataFrame, selected_features: list[str]):
     
     # Validate features exist in current dataframe
     missing_features = [f for f in features_used if f not in df.columns]
+    missing_features = [f for f in features_used if f not in df.columns]
     if missing_features:
-        st.error(f"❌ Features manquantes dans le dataset actuel: {missing_features}")
+        st.error(f"❌ Missing features in current dataset: {missing_features}")
         return
     
     X = df[features_used]
@@ -364,22 +365,22 @@ def render_charts_tab(df: pd.DataFrame, selected_features: list[str]):
     
     # Show algorithm-specific chart availability info
     st.markdown("---")
-    st.markdown(f"**Algorithme sélectionné**: `{algo}`")
+    st.markdown(f"**Selected Algorithm**: `{algo}`")
     
     # Display which visualizations are available for this algorithm
     available_viz = []
     if algo in ["KMeans", "K-Medoids"]:
-        available_viz = ["Elbow Plot", "Silhouette vs K", "Distribution des clusters"]
+        available_viz = ["Elbow Plot", "Silhouette vs K", "Cluster Distribution"]
     elif algo == "DBSCAN":
-        available_viz = ["k-Distance Graph", "Distribution des clusters"]
+        available_viz = ["k-Distance Graph", "Cluster Distribution"]
     elif algo in ["AGNES", "DIANA"]:
-        available_viz = ["Dendrogramme", "Silhouette vs K", "Distribution des clusters"]
+        available_viz = ["Dendrogram", "Silhouette vs K", "Cluster Distribution"]
         # Check dendrogram size limit
         if len(df) > VISUALIZATION_CONSTRAINTS["dendrogram"]["max_samples"]:
-            st.warning(f"⚠️ Le dendrogramme est désactivé car le dataset contient plus de "
-                      f"{VISUALIZATION_CONSTRAINTS['dendrogram']['max_samples']} échantillons ({len(df)}).")
+            st.warning(f"⚠️ Dendrogram disabled as dataset contains more than "
+                      f"{VISUALIZATION_CONSTRAINTS['dendrogram']['max_samples']} samples ({len(df)}).")
     
-    st.info(f"📊 Visualisations disponibles pour {algo}: {', '.join(available_viz)}")
+    st.info(f"📊 Available visualizations for {algo}: {', '.join(available_viz)}")
 
     # Dispatch charts based on algorithm
     if algo == "KMeans":
@@ -407,29 +408,29 @@ def _render_diana_charts(X: np.ndarray, res: dict, run_name: str, n_samples: int
     n_samples = n_samples or X.shape[0]
     max_dendrogram_samples = VISUALIZATION_CONSTRAINTS["dendrogram"]["max_samples"]
     
-    tabs = st.tabs(["Dendrogramme", "Silhouette vs K", "Distribution des clusters"])
+    tabs = st.tabs(["Dendrogram", "Silhouette vs K", "Cluster Distribution"])
     
     # Dendrogram
     with tabs[0]:
         if n_samples > max_dendrogram_samples:
-            st.warning(f"⚠️ Dendrogramme désactivé: le dataset ({n_samples} échantillons) "
-                      f"dépasse la limite de {max_dendrogram_samples} échantillons.")
-            st.info("💡 Utilisez un sous-échantillonnage ou la visualisation 2D/3D à la place.")
+            st.warning(f"⚠️ Dendrogram disabled: dataset ({n_samples} samples) "
+                      f"exceeds limit of {max_dendrogram_samples} samples.")
+            st.info("💡 Use subsampling or 2D/3D visualization instead.")
         else:
-            st.markdown("**Dendrogramme (DIANA - Divisif)** : affichage hiérarchique du clustering.")
+            st.markdown("**Dendrogram (DIANA - Divisive)** : hierarchical clustering display.")
             n_clusters = int(res.get("params", {}).get("n_clusters", 2))
-            k_cut = st.slider("Couper pour obtenir combien de clusters ?", 2, min(10, X.shape[0]), n_clusters, key=f"diana_dendrogram_{run_name}")
+            k_cut = st.slider("Cut to obtain how many clusters?", 2, min(10, X.shape[0]), n_clusters, key=f"diana_dendrogram_{run_name}")
             try:
                 Z = compute_linkage_matrix(X, method="complete")
                 fig = create_dendrogram(Z, k_cut, figsize=(12, 5))
                 st.pyplot(fig)
             except Exception as e:
-                st.error(f"❌ Impossible de calculer le dendrogramme: {e}")
+                st.error(f"❌ Unable to compute dendrogram: {e}")
     
     # Silhouette plot
     with tabs[1]:
-        st.markdown("**Score de Silhouette** : mesure de qualité vs nombre de clusters.")
-        if st.button("Calculer Silhouette", key=f"diana_silhouette_{run_name}"):
+        st.markdown("**Silhouette Score** : quality measure vs number of clusters.")
+        if st.button("Calculate Silhouette", key=f"diana_silhouette_{run_name}"):
             from clustering.diana import compute_diana_analysis
             metric = res.get("params", {}).get("metric", "euclidean")
             analysis = compute_diana_analysis(X, metric=metric, k_range=range(2, min(11, X.shape[0])))
@@ -439,7 +440,7 @@ def _render_diana_charts(X: np.ndarray, res: dict, run_name: str, n_samples: int
     
     # Histogram
     with tabs[2]:
-        st.markdown("**Distribution des clusters** : nombre de points par cluster.")
+        st.markdown("**Cluster Distribution** : number of points per cluster.")
         labels = res.get("labels", np.array([]))
         fig = create_cluster_histogram(labels)
         st.plotly_chart(fig, use_container_width=True)
@@ -452,30 +453,30 @@ def _render_agnes_charts(X: np.ndarray, res: dict, run_name: str, n_samples: int
     n_samples = n_samples or X.shape[0]
     max_dendrogram_samples = VISUALIZATION_CONSTRAINTS["dendrogram"]["max_samples"]
     
-    tabs = st.tabs(["Dendrogramme", "Silhouette vs K", "Distribution des clusters"])
+    tabs = st.tabs(["Dendrogram", "Silhouette vs K", "Cluster Distribution"])
     
     # Dendrogram
     with tabs[0]:
         if n_samples > max_dendrogram_samples:
-            st.warning(f"⚠️ Dendrogramme désactivé: le dataset ({n_samples} échantillons) "
-                      f"dépasse la limite de {max_dendrogram_samples} échantillons.")
-            st.info("💡 Utilisez un sous-échantillonnage ou la visualisation 2D/3D à la place.")
+            st.warning(f"⚠️ Dendrogram disabled: dataset ({n_samples} samples) "
+                      f"exceeds limit of {max_dendrogram_samples} samples.")
+            st.info("💡 Use subsampling or 2D/3D visualization instead.")
         else:
-            st.markdown("**Dendrogramme (AGNES - Agglomératif)** : affichage hiérarchique du clustering.")
+            st.markdown("**Dendrogram (AGNES - Agglomerative)** : hierarchical clustering display.")
             n_clusters = int(res.get("params", {}).get("n_clusters", 2))
             linkage_method = res.get("params", {}).get("linkage", "ward")
-            k_cut = st.slider("Couper pour obtenir combien de clusters ?", 2, min(10, X.shape[0]), n_clusters, key=f"agnes_dendrogram_{run_name}")
+            k_cut = st.slider("Cut to obtain how many clusters?", 2, min(10, X.shape[0]), n_clusters, key=f"agnes_dendrogram_{run_name}")
             try:
                 Z = compute_linkage_matrix(X, method=linkage_method)
                 fig = create_dendrogram(Z, k_cut, figsize=(12, 5))
                 st.pyplot(fig)
             except Exception as e:
-                st.error(f"❌ Impossible de calculer le dendrogramme: {e}")
+                st.error(f"❌ Unable to compute dendrogram: {e}")
     
     # Silhouette plot
     with tabs[1]:
-        st.markdown("**Score de Silhouette** : mesure de qualité vs nombre de clusters.")
-        if st.button("Calculer Silhouette", key=f"agnes_silhouette_{run_name}"):
+        st.markdown("**Silhouette Score** : quality measure vs number of clusters.")
+        if st.button("Calculate Silhouette", key=f"agnes_silhouette_{run_name}"):
             from clustering.agnes import compute_agnes_analysis
             linkage_method = res.get("params", {}).get("linkage", "ward")
             analysis = compute_agnes_analysis(X, method=linkage_method, k_range=range(2, min(11, X.shape[0])))
@@ -485,7 +486,7 @@ def _render_agnes_charts(X: np.ndarray, res: dict, run_name: str, n_samples: int
     
     # Histogram
     with tabs[2]:
-        st.markdown("**Distribution des clusters** : nombre de points par cluster.")
+        st.markdown("**Cluster Distribution** : number of points per cluster.")
         labels = res.get("labels", np.array([]))
         fig = create_cluster_histogram(labels)
         st.plotly_chart(fig, use_container_width=True)
@@ -493,27 +494,27 @@ def _render_agnes_charts(X: np.ndarray, res: dict, run_name: str, n_samples: int
 
 def _render_kmeans_charts(X: np.ndarray, res: dict, run_name: str):
     """Render K-Means specific charts: Elbow + Silhouette + Histogram"""
-    tabs = st.tabs(["Elbow Plot", "Silhouette vs K", "Distribution des clusters"])
+    tabs = st.tabs(["Elbow Plot", "Silhouette vs K", "Cluster Distribution"])
 
     # Elbow plot
     with tabs[0]:
-        st.markdown("**Courbe d'Elbow** : inertie en fonction du nombre de clusters.")
-        if st.button("Calculer Elbow", key=f"kmeans_elbow_{run_name}"):
+        st.markdown("**Elbow Curve** : inertia vs number of clusters.")
+        if st.button("Calculate Elbow", key=f"kmeans_elbow_{run_name}"):
             k_values, inertias = compute_elbow(X, range(2, min(11, X.shape[0])))
             fig = create_elbow_plot(k_values, inertias)
             st.plotly_chart(fig, use_container_width=True)
 
     # Silhouette plot
     with tabs[1]:
-        st.markdown("**Score de Silhouette** : mesure de qualité vs nombre de clusters.")
-        if st.button("Calculer Silhouette", key=f"kmeans_silhouette_{run_name}"):
+        st.markdown("**Silhouette Score** : quality measure vs number of clusters.")
+        if st.button("Calculate Silhouette", key=f"kmeans_silhouette_{run_name}"):
             k_values, scores = compute_silhouette_scores(X, range(2, min(11, X.shape[0])))
             fig = create_silhouette_plot(k_values, scores)
             st.plotly_chart(fig, use_container_width=True)
 
     # Histogram
     with tabs[2]:
-        st.markdown("**Distribution des clusters** : nombre de points par cluster.")
+        st.markdown("**Cluster Distribution** : number of points per cluster.")
         labels = res.get("labels", np.array([]))
         fig = create_cluster_histogram(labels)
         st.plotly_chart(fig, use_container_width=True)
@@ -521,30 +522,30 @@ def _render_kmeans_charts(X: np.ndarray, res: dict, run_name: str):
 
 def _render_kmedoids_charts(X: np.ndarray, res: dict, run_name: str):
     """Render K-Medoids specific charts: Elbow + Silhouette + Histogram"""
-    tabs = st.tabs(["Elbow Plot", "Silhouette vs K", "Distribution des clusters"])
+    tabs = st.tabs(["Elbow Plot", "Silhouette vs K", "Cluster Distribution"])
 
     # Elbow plot for K-Medoids
     with tabs[0]:
-        st.markdown("**Courbe d'Elbow (K-Medoids)** : inertie en fonction du nombre de clusters.")
+        st.markdown("**Elbow Curve (K-Medoids)** : inertia vs number of clusters.")
         metric = res.get("params", {}).get("metric", "euclidean")
-        if st.button("Calculer Elbow", key=f"kmedoids_elbow_{run_name}"):
+        if st.button("Calculate Elbow", key=f"kmedoids_elbow_{run_name}"):
             from clustering.kmedoids import compute_kmedoids_elbow
             k_values, inertias = compute_kmedoids_elbow(X, range(2, min(11, X.shape[0])), metric=metric)
             fig = create_elbow_plot(k_values, inertias)
-            fig.update_layout(title="Courbe d'Elbow (K-Medoids)")
+            fig.update_layout(title="Elbow Curve (K-Medoids)")
             st.plotly_chart(fig, use_container_width=True)
 
     # Silhouette plot
     with tabs[1]:
-        st.markdown("**Score de Silhouette** : mesure de qualité vs nombre de clusters.")
-        if st.button("Calculer Silhouette", key=f"kmedoids_silhouette_{run_name}"):
+        st.markdown("**Silhouette Score** : quality measure vs number of clusters.")
+        if st.button("Calculate Silhouette", key=f"kmedoids_silhouette_{run_name}"):
             k_values, scores = compute_silhouette_scores(X, range(2, min(11, X.shape[0])))
             fig = create_silhouette_plot(k_values, scores)
             st.plotly_chart(fig, use_container_width=True)
 
     # Histogram
     with tabs[2]:
-        st.markdown("**Distribution des clusters** : nombre de points par cluster.")
+        st.markdown("**Cluster Distribution** : number of points per cluster.")
         labels = res.get("labels", np.array([]))
         fig = create_cluster_histogram(labels)
         st.plotly_chart(fig, use_container_width=True)
@@ -552,20 +553,20 @@ def _render_kmedoids_charts(X: np.ndarray, res: dict, run_name: str):
 
 def _render_dbscan_charts(X: np.ndarray, res: dict, run_name: str):
     """Render DBSCAN specific charts: k-Distance + Histogram"""
-    tabs = st.tabs(["k-Distance Graph", "Distribution des clusters"])
+    tabs = st.tabs(["k-Distance Graph", "Cluster Distribution"])
 
     # k-Distance graph
     with tabs[0]:
-        st.markdown("**k-Distance Graph** : pour déterminer le paramètre epsilon.")
+        st.markdown("**k-Distance Graph** : to determine epsilon parameter.")
         min_samples = int(res.get("params", {}).get("min_samples", 5))
-        if st.button("Calculer k-Distance", key=f"dbscan_kdist_{run_name}"):
+        if st.button("Calculate k-Distance", key=f"dbscan_kdist_{run_name}"):
             distances = compute_kdistances(X, k=min_samples)
             fig = create_kdistance_graph(distances, k=min_samples)
             st.plotly_chart(fig, use_container_width=True)
 
     # Histogram
     with tabs[1]:
-        st.markdown("**Distribution des clusters** : nombre de points par cluster (incluant bruit).")
+        st.markdown("**Cluster Distribution** : number of points per cluster (including noise).")
         labels = res.get("labels", np.array([]))
         fig = create_cluster_histogram(labels)
         st.plotly_chart(fig, use_container_width=True)
@@ -573,7 +574,7 @@ def _render_dbscan_charts(X: np.ndarray, res: dict, run_name: str):
 
 def _render_generic_charts(X: np.ndarray, res: dict, run_name: str):
     """Render generic charts for any algorithm: Histogram"""
-    st.markdown("**Distribution des clusters** : nombre de points par cluster.")
+    st.markdown("**Cluster Distribution** : number of points per cluster.")
     labels = res.get("labels", np.array([]))
     fig = create_cluster_histogram(labels)
     st.plotly_chart(fig, use_container_width=True)

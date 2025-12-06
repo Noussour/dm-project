@@ -110,7 +110,7 @@ def run_classification(algo_name: str, params: dict,
         result["model"] = algo_result.get("model")
         
     else:
-        raise ValueError(f"Algorithme non supporté: {algo_name}")
+        raise ValueError(f"Unsupported algorithm: {algo_name}")
     
     # Compute metrics
     metrics = compute_all_metrics(y_test, result["y_pred"])

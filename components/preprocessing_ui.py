@@ -20,17 +20,17 @@ def render_outlier_detection_section(df: pd.DataFrame, selected_features: list) 
     Returns:
         Tuple of (remove_outliers_checkbox, outlier_features_to_remove)
     """
-    st.markdown("#### **Détection et suppression des valeurs aberrantes (Outliers)**")
+    st.markdown("#### **Outlier Detection and Removal**")
     
     # Checkbox to enable outlier removal
     remove_outliers = st.checkbox(
-        "Détecter et supprimer les valeurs aberrantes",
+        "Detect and remove outliers",
         value=False,
         key="remove_outliers_checkbox"
     )
     
     if remove_outliers and selected_features:
-        st.markdown("_Boxplots des features sélectionnées (les points en dehors indiquent des valeurs aberrantes)_")
+        st.markdown("_Boxplots of selected features (points outside indicate outliers)_")
         
         # Detect outliers
         outlier_handler = OutlierHandler()
@@ -50,8 +50,8 @@ def render_outlier_detection_section(df: pd.DataFrame, selected_features: list) 
                 ))
             
             fig.update_layout(
-                title="Boxplots des Features",
-                yaxis_title="Valeur",
+                title="Feature Boxplots",
+                yaxis_title="Value",
                 height=400,
                 showlegend=True
             )
@@ -59,19 +59,19 @@ def render_outlier_detection_section(df: pd.DataFrame, selected_features: list) 
         
         with col2:
             # Show outlier statistics
-            st.markdown("**Statistiques des outliers (IQR):**")
+            st.markdown("**Outlier Statistics (IQR):**")
             for feature, info in outliers_info.items():
                 if info['count'] > 0:
                     st.warning(
                         f"**{feature}**: {info['count']} outliers ({info['percentage']:.1f}%)\n"
-                        f"Plage: [{info['lower_bound']:.2f}, {info['upper_bound']:.2f}]"
+                        f"Range: [{info['lower_bound']:.2f}, {info['upper_bound']:.2f}]"
                     )
                 else:
-                    st.success(f"**{feature}**: Aucun outlier détecté ✓")
+                    st.success(f"**{feature}**: No outlier detected ✓")
         
         # Select which features to remove outliers from
         outlier_features = st.multiselect(
-            "Sélectionner les features pour lesquelles supprimer les outliers",
+            "Select features to remove outliers from",
             [f for f, info in outliers_info.items() if info['count'] > 0],
             default=[f for f, info in outliers_info.items() if info['count'] > 0],
             key="outlier_features_select"
@@ -92,22 +92,22 @@ def render_missing_values_strategy(df: pd.DataFrame) -> dict:
     Returns:
         Dictionary with strategy configuration
     """
-    st.markdown("#### **Gestion des valeurs manquantes**")
+    st.markdown("#### **Missing Values Handling**")
     
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     
     # Global strategy
-    st.markdown("**Stratégie globale (par défaut pour toutes les colonnes):**")
+    st.markdown("**Global Strategy (default for all columns):**")
     global_strategy = st.selectbox(
-        "Sélectionnez une stratégie",
+        "Select a strategy",
         [
-            "Aucune (garder les valeurs manquantes)",
-            "Supprimer les lignes avec valeurs manquantes",
-            "Supprimer les colonnes avec valeurs manquantes",
-            "Imputation par la moyenne",
-            "Imputation par la médiane",
-            "Forward Fill (dernière observation)",
-            "Backward Fill (observation suivante)",
+            "None (keep missing values)",
+            "Remove rows with missing values",
+            "Remove columns with missing values",
+            "Mean Imputation",
+            "Median Imputation",
+            "Forward Fill (last observation)",
+            "Backward Fill (next observation)",
         ],
         index=3,
         key="global_strategy",
@@ -117,27 +117,27 @@ def render_missing_values_strategy(df: pd.DataFrame) -> dict:
     # Per-column specific strategies
     per_column_strategies = {}
     if df.isnull().any().any():
-        st.markdown("**Stratégies spécifiques par colonne (optionnel):**")
+        st.markdown("**Specific strategies per column (optional):**")
         
         cols_with_missing = df.columns[df.isnull().any()].tolist()
         
-        with st.expander("Définir des stratégies spécifiques pour certaines colonnes"):
+        with st.expander("Define specific strategies for certain columns"):
             for col in cols_with_missing:
                 if col in numeric_cols:
                     col_strategy = st.selectbox(
-                        f"Stratégie pour **{col}**:",
+                        f"Strategy for **{col}**:",
                         [
-                            "Utiliser la stratégie globale",
-                            "Imputation par la moyenne",
-                            "Imputation par la médiane",
+                            "Use global strategy",
+                            "Mean Imputation",
+                            "Median Imputation",
                             "Forward Fill",
                             "Backward Fill",
-                            "Supprimer cette colonne",
+                            "Remove this column",
                         ],
                         index=0,
                         key=f"col_strategy_{col}"
                     )
-                    if col_strategy != "Utiliser la stratégie globale":
+                    if col_strategy != "Use global strategy":
                         per_column_strategies[col] = col_strategy
     
     return {
@@ -156,14 +156,14 @@ def render_normalization_section(df: pd.DataFrame) -> dict:
     Returns:
         Dictionary with normalization configuration
     """
-    st.markdown("#### **Normalisation des features numériques**")
+    st.markdown("#### **Numeric Feature Normalization**")
     
     normalization_option = st.selectbox(
-        "Sélectionner une stratégie de normalisation",
+        "Select a normalization strategy",
         [
-            "Aucune",
-            "Min-Max (mise à l'échelle 0-1)",
-            "Z-Score (standardisation)",
+            "None",
+            "Min-Max (0-1 scaling)",
+            "Z-Score (standardization)",
             "Decimal Scaling",
         ],
         key="normalization_option"
@@ -171,12 +171,12 @@ def render_normalization_section(df: pd.DataFrame) -> dict:
     
     config = {"strategy": normalization_option}
     
-    if normalization_option == "Min-Max (mise à l'échelle 0-1)":
+    if normalization_option == "Min-Max (0-1 scaling)":
         col1, col2 = st.columns(2)
         with col1:
-            config["min_value"] = st.number_input("Valeur min", value=0.0, key="minmax_min")
+            config["min_value"] = st.number_input("Min value", value=0.0, key="minmax_min")
         with col2:
-            config["max_value"] = st.number_input("Valeur max", value=1.0, key="minmax_max")
+            config["max_value"] = st.number_input("Max value", value=1.0, key="minmax_max")
     
     return config
 
@@ -210,70 +210,70 @@ def run_preprocessing_pipeline(
     if remove_outliers and outlier_features:
         outlier_handler = OutlierHandler()
         df_processed, removed_count = outlier_handler.remove_outliers_iqr(df_processed, columns=outlier_features)
-        steps_log.append(f"✓ Suppression des outliers: {removed_count} lignes supprimées")
+        steps_log.append(f"✓ Outlier removal: {removed_count} rows removed")
     
     # Step 2: Handle missing values
     global_strat = missing_strategy["global_strategy"]
     per_col_strats = missing_strategy["per_column_strategies"]
     
-    if global_strat != "Aucune (garder les valeurs manquantes)":
+    if global_strat != "None (keep missing values)":
         handler = MissingDataHandler()
         
         # Apply per-column strategies first
         for col, col_strat in per_col_strats.items():
-            if col_strat == "Imputation par la moyenne":
+            if col_strat == "Mean Imputation":
                 df_processed[col] = handler.impute_mean(df_processed[[col]])
-                steps_log.append(f"✓ {col}: imputation par la moyenne")
-            elif col_strat == "Imputation par la médiane":
+                steps_log.append(f"✓ {col}: mean imputation")
+            elif col_strat == "Median Imputation":
                 df_processed[col] = handler.impute_median(df_processed[[col]])
-                steps_log.append(f"✓ {col}: imputation par la médiane")
+                steps_log.append(f"✓ {col}: median imputation")
             elif col_strat == "Forward Fill":
                 df_processed[col] = handler.impute_forward_fill(df_processed[[col]])
                 steps_log.append(f"✓ {col}: forward fill")
             elif col_strat == "Backward Fill":
                 df_processed[col] = handler.impute_backward_fill(df_processed[[col]])
                 steps_log.append(f"✓ {col}: backward fill")
-            elif col_strat == "Supprimer cette colonne":
+            elif col_strat == "Remove this column":
                 df_processed = df_processed.drop(columns=[col])
-                steps_log.append(f"✓ {col}: colonne supprimée")
+                steps_log.append(f"✓ {col}: column removed")
         
         # Apply global strategy to remaining missing values
         if df_processed.isnull().values.any():
-            if global_strat == "Supprimer les lignes avec valeurs manquantes":
+            if global_strat == "Remove rows with missing values":
                 initial_len = len(df_processed)
                 df_processed = df_processed.dropna()
                 removed = initial_len - len(df_processed)
-                steps_log.append(f"✓ Suppression des lignes: {removed} lignes supprimées")
+                steps_log.append(f"✓ Row removal: {removed} rows removed")
             
-            elif global_strat == "Supprimer les colonnes avec valeurs manquantes":
+            elif global_strat == "Remove columns with missing values":
                 initial_cols = len(df_processed.columns)
                 df_processed = df_processed.dropna(axis=1)
                 removed_cols = initial_cols - len(df_processed.columns)
-                steps_log.append(f"✓ Suppression des colonnes: {removed_cols} colonnes supprimées")
+                steps_log.append(f"✓ Column removal: {removed_cols} columns removed")
             
-            elif global_strat == "Imputation par la moyenne":
+            elif global_strat == "Mean Imputation":
                 df_processed = handler.impute_mean(df_processed)
-                steps_log.append("✓ Imputation par la moyenne (globale)")
+                steps_log.append("✓ Mean Imputation (global)")
             
-            elif global_strat == "Imputation par la médiane":
+            elif global_strat == "Median Imputation":
                 df_processed = handler.impute_median(df_processed)
-                steps_log.append("✓ Imputation par la médiane (globale)")
+                steps_log.append("✓ Median Imputation (global)")
             
-            elif global_strat == "Forward Fill (dernière observation)":
+            elif global_strat == "Forward Fill (last observation)":
                 df_processed = handler.impute_forward_fill(df_processed)
-                steps_log.append("✓ Forward Fill (globale)")
+                steps_log.append("✓ Forward Fill (global)")
             
-            elif global_strat == "Backward Fill (observation suivante)":
+            elif global_strat == "Backward Fill (next observation)":
                 df_processed = handler.impute_backward_fill(df_processed)
-                steps_log.append("✓ Backward Fill (globale)")
+                steps_log.append("✓ Backward Fill (global)")
     
     # Step 3: Apply normalization
     norm_strat = normalization_config["strategy"]
-    if norm_strat != "Aucune":
+    if norm_strat != "None":
         transformer = DataTransformer()
         numeric_cols = df_processed.select_dtypes(include=[np.number]).columns.tolist()
         
-        if norm_strat == "Min-Max (mise à l'échelle 0-1)":
+        if norm_strat == "Min-Max (0-1 scaling)":
             min_val = normalization_config.get("min_value", 0.0)
             max_val = normalization_config.get("max_value", 1.0)
             df_processed[numeric_cols] = transformer.apply_minmax_normalization(
@@ -281,21 +281,21 @@ def run_preprocessing_pipeline(
             )
             steps_log.append(f"✓ Min-Max normalization: [{min_val}, {max_val}]")
         
-        elif norm_strat == "Z-Score (standardisation)":
+        elif norm_strat == "Z-Score (standardization)":
             df_processed[numeric_cols] = transformer.apply_zscore_normalization(df_processed[numeric_cols])
-            steps_log.append("✓ Z-Score normalization (standardisation)")
+            steps_log.append("✓ Z-Score normalization (standardization)")
         
         elif norm_strat == "Decimal Scaling":
             df_processed[numeric_cols] = transformer.apply_decimal_scaling(df_processed[numeric_cols])
             steps_log.append("✓ Decimal Scaling")
     
     # Display processing log
-    st.success("Pipeline de prétraitement exécuté avec succès!")
-    with st.expander("Détails des étapes exécutées"):
+    st.success("Preprocessing pipeline executed successfully!")
+    with st.expander("Details of executed steps"):
         for step in steps_log:
             st.write(step)
     
     # Show data shape change
-    st.info(f"Dataset original: {df.shape} → Après prétraitement: {df_processed.shape}")
+    st.info(f"Original dataset: {df.shape} → After preprocessing: {df_processed.shape}")
     
     return df_processed

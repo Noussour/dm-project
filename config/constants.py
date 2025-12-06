@@ -110,31 +110,31 @@ ALGORITHM_CONSTRAINTS = {
         "min_samples": 3,
         "min_features": 1,
         "requires_no_missing": True,
-        "description": "K-Means nécessite au moins 3 échantillons et des données sans valeurs manquantes",
+        "description": "K-Means requires at least 3 samples and data without missing values",
     },
     "K-Medoids": {
         "min_samples": 3,
         "min_features": 1,
         "requires_no_missing": True,
-        "description": "K-Medoids nécessite au moins 3 échantillons et des données sans valeurs manquantes",
+        "description": "K-Medoids requires at least 3 samples and data without missing values",
     },
     "DBSCAN": {
         "min_samples": 5,
         "min_features": 1,
         "requires_no_missing": True,
-        "description": "DBSCAN nécessite au moins 5 échantillons (min_samples par défaut) et des données sans valeurs manquantes",
+        "description": "DBSCAN requires at least 5 samples (default min_samples) and data without missing values",
     },
     "AGNES": {
         "min_samples": 3,
         "min_features": 1,
         "requires_no_missing": True,
-        "description": "AGNES nécessite au moins 3 échantillons et des données sans valeurs manquantes",
+        "description": "AGNES requires at least 3 samples and data without missing values",
     },
     "DIANA": {
         "min_samples": 3,
         "min_features": 1,
         "requires_no_missing": True,
-        "description": "DIANA nécessite au moins 3 échantillons et des données sans valeurs manquantes",
+        "description": "DIANA requires at least 3 samples and data without missing values",
     },
     # Classification algorithms
     "k-NN": {
@@ -142,7 +142,7 @@ ALGORITHM_CONSTRAINTS = {
         "min_features": 1,
         "min_classes": 2,
         "requires_no_missing": True,
-        "description": "k-NN nécessite au moins 10 échantillons, 2 classes, et des données sans valeurs manquantes",
+        "description": "k-NN requires at least 10 samples, 2 classes, and data without missing values",
     },
     "Naive Bayes": {
         "min_samples": 5,
@@ -150,21 +150,21 @@ ALGORITHM_CONSTRAINTS = {
         "min_classes": 2,
         "requires_no_missing": True,
         "requires_non_negative": True,  # Multinomial NB requires non-negative features
-        "description": "Naive Bayes nécessite au moins 5 échantillons et 2 classes",
+        "description": "Naive Bayes requires at least 5 samples and 2 classes",
     },
     "C4.5": {
         "min_samples": 5,
         "min_features": 1,
         "min_classes": 2,
         "requires_no_missing": True,
-        "description": "C4.5 nécessite au moins 5 échantillons et 2 classes",
+        "description": "C4.5 requires at least 5 samples and 2 classes",
     },
     "SVM": {
         "min_samples": 10,
         "min_features": 1,
         "min_classes": 2,
         "requires_no_missing": True,
-        "description": "SVM nécessite au moins 10 échantillons et 2 classes",
+        "description": "SVM requires at least 10 samples and 2 classes",
     },
 }
 
@@ -172,40 +172,40 @@ ALGORITHM_CONSTRAINTS = {
 VISUALIZATION_CONSTRAINTS = {
     "2D_scatter": {
         "min_features": 2,
-        "description": "La visualisation 2D nécessite au moins 2 features",
+        "description": "2D visualization requires at least 2 features",
     },
     "3D_scatter": {
         "min_features": 3,
-        "description": "La visualisation 3D nécessite au moins 3 features",
+        "description": "3D visualization requires at least 3 features",
     },
     "dendrogram": {
         "max_samples": 1000,
         "algorithms": ["AGNES", "DIANA"],
-        "description": "Le dendrogramme n'est disponible que pour AGNES et DIANA (max 1000 échantillons)",
+        "description": "Dendrogram is only available for AGNES and DIANA (max 1000 samples)",
     },
     "elbow_plot": {
         "algorithms": ["KMeans", "K-Medoids"],
-        "description": "La courbe d'Elbow n'est disponible que pour K-Means et K-Medoids",
+        "description": "Elbow curve is only available for K-Means and K-Medoids",
     },
     "k_distance_graph": {
         "algorithms": ["DBSCAN"],
-        "description": "Le graphique k-distance n'est disponible que pour DBSCAN",
+        "description": "k-distance graph is only available for DBSCAN",
     },
 }
 
 # Metrics descriptions for help text (clustering)
 METRICS_HELP = {
-    "silhouette": "Mesure de cohésion/séparation. Valeur dans [-1,1], plus élevé = meilleure séparation.",
-    "calinski_harabasz": "Ratio variance inter/intra-cluster (plus élevé = mieux).",
-    "davies_bouldin": "Moyenne similarité intra-/inter-cluster (plus faible = mieux).",
+    "silhouette": "Cohesion/separation measure. Value in [-1,1], higher = better separation.",
+    "calinski_harabasz": "Ratio of between-cluster to within-cluster dispersion (higher = better).",
+    "davies_bouldin": "Average similarity between clusters (lower = better).",
 }
 
 # Classification metrics descriptions
 CLASSIFICATION_METRICS_HELP = {
-    "accuracy": "Proportion des prédictions correctes sur l'ensemble total.",
-    "precision": "Proportion de vrais positifs parmi les prédictions positives (TP / (TP + FP)).",
-    "recall": "Proportion de vrais positifs parmi les vraies classes positives (TP / (TP + FN)).",
-    "f1": "Moyenne harmonique de la précision et du rappel (2 * P * R / (P + R)).",
+    "accuracy": "Proportion of correct predictions over the total set.",
+    "precision": "Proportion of true positives among positive predictions (TP / (TP + FP)).",
+    "recall": "Proportion of true positives among actual positive instances (TP / (TP + FN)).",
+    "f1": "Harmonic mean of precision and recall (2 * P * R / (P + R)).",
 }
 
 # Default train/test split ratio (80/20)

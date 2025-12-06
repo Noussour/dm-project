@@ -32,29 +32,29 @@ def render_data_preview(df: pd.DataFrame):
     Args:
         df: DataFrame to preview
     """
-    with st.sidebar.expander("Aperçu (5 premières lignes)"):
+    with st.sidebar.expander("Preview (First 5 rows)"):
         st.write(df.head(5))
         st.markdown("---")
         
         # Instance and attribute counts
-        st.markdown(f"**Nombre d'instances (lignes)** : {df.shape[0]}")
-        st.markdown(f"**Nombre d'attributs (colonnes)** : {df.shape[1]}")
+        st.markdown(f"**Number of instances (rows)** : {df.shape[0]}")
+        st.markdown(f"**Number of attributes (columns)** : {df.shape[1]}")
         
         # Attribute list with types
         attr_df = pd.DataFrame({
-            "Nom": df.columns,
+            "Name": df.columns,
             "Type": [str(df[col].dtype) for col in df.columns],
         })
-        st.markdown("**Attributs (nom & type)** :")
+        st.markdown("**Attributes (name & type)** :")
         st.dataframe(attr_df, width='stretch')
         
         # Five-number summary
         five_num = compute_five_number_summary(df)
         if five_num is not None:
-            st.markdown("**Five-number summary (pour attributs numériques)** :")
+            st.markdown("**Five-number summary (for numeric attributes)** :")
             st.dataframe(five_num, width='stretch')
         else:
-            st.info("Aucune colonne numérique détectée pour calculer les quantiles/five-number summary.")
+            st.info("No numeric column detected to calculate quantiles/five-number summary.")
 
 
 def render_file_upload() -> tuple[pd.DataFrame | None, str | None]:
@@ -66,21 +66,21 @@ def render_file_upload() -> tuple[pd.DataFrame | None, str | None]:
     Returns:
         Tuple of (DataFrame, filename) or (None, None)
     """
-    st.sidebar.header("📂 Chargement des données")
+    st.sidebar.header("📂 Data Loading")
     
     # Data source selection
     data_source = st.sidebar.radio(
-        "Source des données",
-        ["📁 Dataset prédéfini", "📤 Upload fichier"],
-        help="Choisissez un dataset prédéfini ou uploadez votre propre fichier"
+        "Data Source",
+        ["📁 Predefined Dataset", "📤 File Upload"],
+        help="Choose a predefined dataset or upload your own file"
     )
     
     df = None
     dataset_name = None
     
-    if data_source == "📁 Dataset prédéfini":
+    if data_source == "📁 Predefined Dataset" or data_source == "📁 Dataset prédéfini": # Backward compatibility
         st.sidebar.markdown("---")
-        st.sidebar.markdown("### Datasets disponibles")
+        st.sidebar.markdown("### Available Datasets")
         
         # Get predefined datasets
         predefined_datasets = get_predefined_datasets()
@@ -88,7 +88,7 @@ def render_file_upload() -> tuple[pd.DataFrame | None, str | None]:
         
         # Dataset selection
         selected_dataset = st.sidebar.selectbox(
-            "Sélectionnez un dataset",
+            "Select a dataset",
             dataset_options,
             format_func=lambda x: f"{x} ({predefined_datasets[x]['num_instances']} inst.)"
         )
@@ -97,25 +97,26 @@ def render_file_upload() -> tuple[pd.DataFrame | None, str | None]:
             dataset_info = predefined_datasets[selected_dataset]
             
             # Show dataset info
-            with st.sidebar.expander("ℹ️ Informations sur le dataset", expanded=False):
+            # Show dataset info
+            with st.sidebar.expander("ℹ️ Dataset Information", expanded=False):
                 st.markdown(f"**Description**: {dataset_info['description']}")
                 st.markdown(f"**Instances**: {dataset_info['num_instances']}")
                 st.markdown(f"**Features**: {dataset_info['num_features']}")
                 st.markdown(f"**Classes**: {dataset_info['num_classes']}")
                 
                 if dataset_info.get('has_missing_values'):
-                    st.warning("⚠️ Ce dataset contient des valeurs manquantes")
+                    st.warning("⚠️ This dataset contains missing values")
                 else:
-                    st.success("✅ Pas de valeurs manquantes")
+                    st.success("✅ No missing values")
                 
                 if dataset_info.get('target_column'):
-                    st.info(f"**Cible recommandée**: `{dataset_info['target_column']}`")
+                    st.info(f"**Recommended Target**: `{dataset_info['target_column']}`")
                 
                 recommended = ", ".join(dataset_info.get('recommended_for', []))
-                st.markdown(f"**Recommandé pour**: {recommended}")
+                st.markdown(f"**Recommended for**: {recommended}")
             
             # Load button
-            if st.sidebar.button("📥 Charger ce dataset", use_container_width=True):
+            if st.sidebar.button("📥 Load this dataset", use_container_width=True):
                 # Check if this is a different dataset
                 current_dataset_key = st.session_state.get("current_uploaded_file")
                 new_dataset_key = f"predefined_{selected_dataset}"
@@ -128,15 +129,15 @@ def render_file_upload() -> tuple[pd.DataFrame | None, str | None]:
                     st.session_state["classification_results"] = {}
                     st.session_state["selected_features_for_clustering"] = []
                     st.session_state["selected_dataset_key"] = None
-                    st.session_state["active_section"] = "Prétraitement"
-                    st.toast(f"Dataset '{selected_dataset}' chargé — session réinitialisée.")
+                    st.session_state["active_section"] = "Preprocessing"
+                    st.toast(f"Dataset '{selected_dataset}' loaded — session reset.")
                 
                 df, dataset_name = load_predefined_dataset(selected_dataset)
                 if df is not None:
                     st.session_state["loaded_predefined_df"] = df
                     st.session_state["loaded_predefined_name"] = dataset_name
                     st.sidebar.success(
-                        f"✅ '{selected_dataset}' chargé ({df.shape[0]} lignes, {df.shape[1]} colonnes)"
+                        f"✅ '{selected_dataset}' loaded ({df.shape[0]} rows, {df.shape[1]} columns)"
                     )
             
             # Check if we already have a loaded predefined dataset
@@ -148,10 +149,10 @@ def render_file_upload() -> tuple[pd.DataFrame | None, str | None]:
     
     else:  # Upload file
         st.sidebar.markdown("---")
-        st.sidebar.markdown("_Formats supportés: CSV, Excel (xlsx/xls)_")
+        st.sidebar.markdown("_Supported formats: CSV, Excel (xlsx/xls)_")
         
         uploaded = st.sidebar.file_uploader(
-            "📥 Uploader un fichier",
+            "📥 Upload a file",
             accept_multiple_files=False,
             type=["csv", "xlsx", "xls"]
         )
@@ -167,20 +168,20 @@ def render_file_upload() -> tuple[pd.DataFrame | None, str | None]:
                 st.session_state["classification_results"] = {}
                 st.session_state["selected_features_for_clustering"] = []
                 st.session_state["selected_dataset_key"] = None
-                st.session_state["active_section"] = "Prétraitement"
+                st.session_state["active_section"] = "Preprocessing"
                 # Clear predefined dataset if any
                 st.session_state.pop("loaded_predefined_df", None)
                 st.session_state.pop("loaded_predefined_name", None)
-                st.toast("Nouveau dataset uploadé — session réinitialisée.")
+                st.toast("New dataset uploaded — session reset.")
             
             df = read_uploaded_file(uploaded)
             if df is not None:
                 dataset_name = uploaded.name
                 st.sidebar.success(
-                    f"✅ '{uploaded.name}' chargé ({df.shape[0]} lignes, {df.shape[1]} colonnes)"
+                    f"✅ '{uploaded.name}' loaded ({df.shape[0]} rows, {df.shape[1]} columns)"
                 )
             else:
-                st.sidebar.warning("Impossible de lire le fichier uploadé.")
+                st.sidebar.warning("Unable to read uploaded file.")
     
     # Show preview if data loaded
     if df is not None:
@@ -202,9 +203,9 @@ def render_feature_selection(df: pd.DataFrame) -> list[str]:
     """
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     
-    st.sidebar.markdown("### Sélection des features")
+    st.sidebar.markdown("### Feature Selection")
     selected_features = st.sidebar.multiselect(
-        "Choisissez au moins 1 feature numérique pour le clustering",
+        "Choose at least 1 numeric feature for clustering",
         numeric_cols,
         default=numeric_cols,  # Select all features by default
     )
@@ -223,35 +224,35 @@ def render_preprocessing(df: pd.DataFrame, selected_features: list) -> tuple[pd.
         Tuple of (processed_DataFrame, list_of_applied_steps)
     """
     st.markdown("---")
-    st.markdown("### Prétraitement des données")
+    st.markdown("### Data Preprocessing")
     
-    with st.expander("Configuration du pipeline", expanded=True):
+    with st.expander("Pipeline Configuration", expanded=True):
         # Outlier detection and removal
-        st.markdown("#### ☑️ Étape 1: Suppression des outliers")
+        st.markdown("#### ☑️ Step 1: Outlier Removal")
         remove_outliers, outlier_features = render_outlier_detection_section(df, selected_features)
         
         st.markdown("---")
         
         # Missing values strategy
-        st.markdown("#### ☑️ Étape 2: Gestion des valeurs manquantes")
+        st.markdown("#### ☑️ Step 2: Missing Values Handling")
         
         # Show missing values warning
         if df.isnull().values.any():
             missing_total = df.isnull().sum().sum()
-            st.warning(f"Dataset contient **{missing_total}** valeur(s) manquante(s)")
+            st.warning(f"Dataset contains **{missing_total}** missing value(s)")
             
-            with st.expander("Voir les détails"):
+            with st.expander("View details"):
                 missing_counts = df.isnull().sum()
                 for col, count in missing_counts[missing_counts > 0].items():
                     pct = (count / len(df)) * 100
-                    st.write(f"**{col}**: {count} valeurs ({pct:.1f}%)")
+                    st.write(f"**{col}**: {count} values ({pct:.1f}%)")
         
         missing_strategy = render_missing_values_strategy(df)
         
         st.markdown("---")
         
         # Normalization
-        st.markdown("#### ☑️ Étape 3: Normalisation des features")
+        st.markdown("#### ☑️ Step 3: Feature Normalization")
         normalization_config = render_normalization_section(df)
         
         st.markdown("---")
@@ -260,7 +261,7 @@ def render_preprocessing(df: pd.DataFrame, selected_features: list) -> tuple[pd.
         # col1, col2 = st.columns([2, 1])
         # with col1:
         run_preprocessing_btn = st.button(
-                "▶️ Exécuter le pipeline de prétraitement",
+                "▶️ Run Preprocessing Pipeline",
                 key="run_preprocessing_btn",
                 width='stretch'
             )
@@ -302,7 +303,7 @@ def render_preprocessing(df: pd.DataFrame, selected_features: list) -> tuple[pd.
             st.session_state["preprocessed_datasets"][dataset_key] = df_processed
             st.session_state["last_preprocessed_key"] = dataset_key
             
-            st.success(f"Dataset prétraité sauvegardé: `{dataset_key}`")
+            st.success(f"Preprocessed dataset saved: `{dataset_key}`")
             
             return df_processed, ["Preprocessing executed"]
     
@@ -317,76 +318,76 @@ def render_algorithm_params() -> tuple[str, dict, bool, bool, str]:
         Tuple of (algorithm_name, parameters_dict, best_params_button, run_button, selected_dataset_key)
     """
     st.sidebar.markdown("---")
-    st.sidebar.header("Paramètres de clustering")
+    st.sidebar.header("Clustering Parameters")
     
     # Dataset selection
     selected_dataset_key = None
     if "preprocessed_datasets" in st.session_state and st.session_state["preprocessed_datasets"]:
         preprocessed_keys = list(st.session_state["preprocessed_datasets"].keys())
         selected_dataset_key = st.sidebar.selectbox(
-            "Sélectionnez le dataset",
+            "Select dataset",
             preprocessed_keys,
             index=len(preprocessed_keys) - 1,
             format_func=lambda k: f"{k} (shape: {st.session_state['preprocessed_datasets'][k].shape})"
         )
     else:
-        st.sidebar.info("Dataset uploadé (aucun prétraitement disponible)")
+        st.sidebar.info("Uploaded dataset (no preprocessing available)")
         selected_dataset_key = "uploaded"
     
     st.sidebar.markdown("---")
     
     algo_choice = st.sidebar.selectbox(
-        "Sélectionnez l'algorithme",
+        "Select Algorithm",
         SUPPORTED_ALGORITHMS
     )
     
     algo_params = {}
     
     if algo_choice == "KMeans":
-        st.sidebar.markdown("**K-Means** : partitionnement en k clusters (centroïdes)")
+        st.sidebar.markdown("**K-Means** : partitioning into k clusters (centroids)")
         algo_params["n_clusters"] = st.sidebar.slider("n_clusters (k)", 2, 10, 3)
-        algo_params["init"] = st.sidebar.selectbox("Méthode d'initialisation", ("k-means++", "random"))
+        algo_params["init"] = st.sidebar.selectbox("Initialization Method", ("k-means++", "random"))
     
     elif algo_choice == "K-Medoids":
-        st.sidebar.markdown("**K-Medoids (PAM)** : partitionnement avec médoïdes (robuste aux outliers)")
+        st.sidebar.markdown("**K-Medoids (PAM)** : partitioning with medoids (robust to outliers)")
         algo_params["n_clusters"] = st.sidebar.slider("n_clusters (k)", 2, 10, 3)
-        algo_params["metric"] = st.sidebar.selectbox("Métrique de distance", ("euclidean", "manhattan", "cosine"))
-        algo_params["init"] = st.sidebar.selectbox("Méthode d'initialisation", ("k-medoids++", "heuristic", "random"))
+        algo_params["metric"] = st.sidebar.selectbox("Distance Metric", ("euclidean", "manhattan", "cosine"))
+        algo_params["init"] = st.sidebar.selectbox("Initialization Method", ("k-medoids++", "heuristic", "random"))
         
     elif algo_choice == "DBSCAN":
-        st.sidebar.markdown("**DBSCAN** : clustering basé sur la densité")
-        algo_params["eps"] = st.sidebar.slider("eps (rayon)", 0.1, 5.0, 0.5, step=0.1)
+        st.sidebar.markdown("**DBSCAN** : density-based clustering")
+        algo_params["eps"] = st.sidebar.slider("eps (radius)", 0.1, 5.0, 0.5, step=0.1)
         algo_params["min_samples"] = st.sidebar.slider("min_samples", 1, 20, 5)
         
     elif algo_choice == "AGNES":
-        st.sidebar.markdown("**AGNES** : Agglomerative Nesting (approche ascendante)")
+        st.sidebar.markdown("**AGNES** : Agglomerative Nesting (bottom-up approach)")
         algo_params["n_clusters"] = st.sidebar.slider("n_clusters", 2, 10, 2)
-        algo_params["linkage"] = st.sidebar.selectbox("Méthode de liaison", ("ward", "complete", "average", "single"))
-        algo_params["metric"] = st.sidebar.selectbox("Métrique de distance", ("euclidean", "manhattan", "cosine"))
+        algo_params["linkage"] = st.sidebar.selectbox("Linkage Method", ("ward", "complete", "average", "single"))
+        algo_params["metric"] = st.sidebar.selectbox("Distance Metric", ("euclidean", "manhattan", "cosine"))
     
     elif algo_choice == "DIANA":
-        st.sidebar.markdown("**DIANA** : Divisive Analysis (approche descendante)")
+        st.sidebar.markdown("**DIANA** : Divisive Analysis (top-down approach)")
         algo_params["n_clusters"] = st.sidebar.slider("n_clusters", 2, 10, 2)
-        algo_params["metric"] = st.sidebar.selectbox("Métrique de distance", ("euclidean", "manhattan"))
+        algo_params["metric"] = st.sidebar.selectbox("Distance Metric", ("euclidean", "manhattan"))
     
     # Display algorithm constraints info
     from config.constants import ALGORITHM_CONSTRAINTS
     if algo_choice in ALGORITHM_CONSTRAINTS:
         constraints = ALGORITHM_CONSTRAINTS[algo_choice]
-        with st.sidebar.expander("ℹ️ Contraintes de l'algorithme", expanded=False):
-            st.markdown(f"**Min échantillons**: {constraints.get('min_samples', 1)}")
+        with st.sidebar.expander("ℹ️ Algorithm Constraints", expanded=False):
+            st.markdown(f"**Min samples**: {constraints.get('min_samples', 1)}")
             st.markdown(f"**Min features**: {constraints.get('min_features', 1)}")
             if constraints.get('requires_no_missing'):
-                st.markdown("⚠️ **Requiert**: Pas de valeurs manquantes")
+                st.markdown("⚠️ **Requires**: No missing values")
             st.markdown(f"_{constraints.get('description', '')}_")
     
     # Render action buttons below algorithm parameters
     st.sidebar.markdown("---")
     col1, col2 = st.sidebar.columns(2)
     with col1:
-        best_params_button = st.button("🔍 Meilleurs params", use_container_width=True, key="btn_best_params_sidebar")
+        best_params_button = st.button("🔍 Best params", use_container_width=True, key="btn_best_params_sidebar")
     with col2:
-        run_button = st.button("▶️ Exécuter", use_container_width=True, key="btn_run_sidebar")
+        run_button = st.button("▶️ Run", use_container_width=True, key="btn_run_sidebar")
     
     st.sidebar.markdown("---")
     
@@ -400,7 +401,7 @@ def render_run_button() -> bool:
     Returns:
         True if button was clicked
     """
-    return st.sidebar.button("Exécuter le clustering", use_container_width=True)
+    return st.sidebar.button("Execute Clustering", use_container_width=True)
 
 
 def render_best_parameters_button(algo_choice: str, df: pd.DataFrame, selected_features: list) -> bool:
@@ -410,7 +411,7 @@ def render_best_parameters_button(algo_choice: str, df: pd.DataFrame, selected_f
     Returns:
         True if button was clicked
     """
-    return st.sidebar.button("Calculer les meilleurs paramètres", use_container_width=True)
+    return st.sidebar.button("Calculate Best Parameters", use_container_width=True)
 
 
 def calculate_best_parameters(algo_choice: str, df: pd.DataFrame, selected_features: list) -> dict:
@@ -544,11 +545,11 @@ def display_best_parameters_analysis(algo_choice: str, df: pd.DataFrame, selecte
     
     X = df[selected_features].values
     
-    st.markdown("### Analyse des meilleurs paramètres")
+    st.markdown("### Best Parameters Analysis")
     
     if algo_choice == "KMeans":
         # Elbow method
-        st.markdown("#### Méthode du coude (Elbow Method)")
+        st.markdown("#### Elbow Method")
         inertias = []
         silhouette_scores = []
         K_range = range(2, 11)
@@ -566,30 +567,30 @@ def display_best_parameters_analysis(algo_choice: str, df: pd.DataFrame, selecte
             # Plot 1: Inertia (Elbow)
             fig, ax = plt.subplots(figsize=(8, 5))
             ax.plot(K_range, inertias, 'bo-', linewidth=2, markersize=8)
-            ax.set_xlabel("Nombre de clusters (k)", fontsize=12)
-            ax.set_ylabel("Inertie", fontsize=12)
-            ax.set_title("Méthode du coude", fontsize=14, fontweight='bold')
+            ax.set_xlabel("Number of clusters (k)", fontsize=12)
+            ax.set_ylabel("Inertia", fontsize=12)
+            ax.set_title("Elbow Method", fontsize=14, fontweight='bold')
             ax.grid(True, alpha=0.3)
             st.pyplot(fig)
-            st.info("Cherchez le 'coude' - le point où la courbe commence à s'aplatir")
+            st.info("Look for the 'elbow' - the point where the curve starts to flatten")
         
         with col2:
             # Plot 2: Silhouette Score
             fig, ax = plt.subplots(figsize=(8, 5))
             ax.plot(K_range, silhouette_scores, 'go-', linewidth=2, markersize=8)
-            ax.set_xlabel("Nombre de clusters (k)", fontsize=12)
-            ax.set_ylabel("Score de Silhouette", fontsize=12)
-            ax.set_title("Score de Silhouette", fontsize=14, fontweight='bold')
+            ax.set_xlabel("Number of clusters (k)", fontsize=12)
+            ax.set_ylabel("Silhouette Score", fontsize=12)
+            ax.set_title("Silhouette Score", fontsize=14, fontweight='bold')
             ax.grid(True, alpha=0.3)
             st.pyplot(fig)
-            st.info("Plus le score est proche de 1, meilleur est le clustering")
+            st.info("The closer the score is to 1, the better the clustering")
         
         # Recommendation
         best_k = K_range[np.argmax(silhouette_scores)]
-        st.success(f"**Valeur recommandée de k : {best_k}** (basée sur le score de silhouette)")
+        st.success(f"**Recommended k value : {best_k}** (based on silhouette score)")
     
     elif algo_choice == "DBSCAN":
-        st.markdown("#### Analyse de voisinage (k-distance graph)")
+        st.markdown("#### Neighborhood Analysis (k-distance graph)")
         from sklearn.neighbors import NearestNeighbors
         
         # Calculate k-distance graph
@@ -601,31 +602,30 @@ def display_best_parameters_analysis(algo_choice: str, df: pd.DataFrame, selecte
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.plot(distances, linewidth=2)
         ax.set_ylabel("k-distance (k=5)", fontsize=12)
-        ax.set_xlabel("Points triés", fontsize=12)
-        ax.set_title("Graphique k-distance pour déterminer eps", fontsize=14, fontweight='bold')
+        ax.set_xlabel("Sorted Points", fontsize=12)
+        ax.set_title("k-distance Graph to determine eps", fontsize=14, fontweight='bold')
         ax.grid(True, alpha=0.3)
         st.pyplot(fig)
         
-        st.info("Cherchez le point d'inflexion (genou) - c'est une bonne valeur pour eps")
-        st.success(f"**Valeur recommandée pour eps : ~{distances[int(len(distances)*0.9)]:.2f}** (90e percentile)")
-
-
-
+        st.info("Look for the inflection point (knee) - it's a good value for eps")
+        st.success(f"**Recommended value for eps : ~{distances[int(len(distances)*0.9)]:.2f}** (90th percentile)")
+    
+    
 def render_sidebar_footer():
     """Render sidebar footer with help and management options."""
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### Gestion des runs")
+    st.sidebar.markdown("### Run Management")
     
-    if st.sidebar.button("Réinitialiser les résultats stockés"):
+    if st.sidebar.button("Reset stored results"):
         st.session_state["results"] = {}
-        st.sidebar.success("Historique des runs réinitialisé.")
+        st.sidebar.success("Run history reset.")
     
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### Aide & références")
+    st.sidebar.markdown("### Help & References")
     st.sidebar.markdown("""
-- **Silhouette** : [-1,1], plus élevé = meilleure séparation.
-- **Calinski-Harabasz** : plus élevé = meilleur.
-- **Davies-Bouldin** : plus faible = meilleur.
+- **Silhouette** : [-1,1], higher = better separation.
+- **Calinski-Harabasz** : higher = better.
+- **Davies-Bouldin** : lower = better.
 """)
 
 

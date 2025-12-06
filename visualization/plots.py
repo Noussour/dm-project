@@ -59,7 +59,7 @@ def create_2d_scatter(
                 y=c_df[y_col],
                 mode="markers",
                 marker=dict(symbol="x", size=12, line=dict(width=1), color="black"),
-                name="Centroïdes"
+                name="Centroids"
             ))
         except Exception:
             pass
@@ -118,7 +118,7 @@ def create_3d_scatter(
                 z=c_df[z_col],
                 mode="markers",
                 marker=dict(symbol="x", size=8, line=dict(width=1), color="black"),
-                name="Centroïdes"
+                name="Centroids"
             ))
         except Exception:
             pass
@@ -142,12 +142,12 @@ def create_elbow_plot(k_values: list, inertias: list) -> go.Figure:
         x=k_values,
         y=inertias,
         mode="lines+markers",
-        name="Inertie"
+        name="Inertia"
     ))
     fig.update_layout(
         xaxis_title="n_clusters",
-        yaxis_title="Inertie",
-        title="Courbe d'Elbow (K-Means)"
+        yaxis_title="Inertia",
+        title="Elbow Curve (K-Means)"
     )
     return fig
 
@@ -187,8 +187,8 @@ def create_dendrogram(
     except Exception:
         threshold = distances.mean()
     
-    ax.axhline(y=threshold, color="red", linestyle="--", label=f"coupe (k={n_clusters})")
-    ax.set_title("Dendrogramme")
+    ax.axhline(y=threshold, color="red", linestyle="--", label=f"cut (k={n_clusters})")
+    ax.set_title("Dendrogram")
     ax.legend()
     
     return fig
@@ -211,8 +211,8 @@ def create_cluster_histogram(labels: np.ndarray) -> go.Figure:
     fig.add_trace(go.Bar(x=labels_str, y=counts))
     fig.update_layout(
         xaxis_title="Cluster (label)",
-        yaxis_title="Nombre d'observations",
-        title="Taille des clusters"
+        yaxis_title="Number of observations",
+        title="Cluster Sizes"
     )
     
     return fig
@@ -239,7 +239,7 @@ def create_silhouette_plot(k_values: list, silhouette_scores: list) -> go.Figure
         marker=dict(size=8)
     ))
     fig.update_layout(
-        xaxis_title="Nombre de clusters (k)",
+        xaxis_title="Number of clusters (k)",
         yaxis_title="Silhouette Score",
         title="Silhouette Score vs. K",
         hovermode="x unified"
@@ -270,7 +270,7 @@ def create_kdistance_graph(distances: np.ndarray, k: int = 4) -> go.Figure:
         line=dict(color="darkred", width=1)
     ))
     fig.update_layout(
-        xaxis_title="Points (triés)",
+        xaxis_title="Points (sorted)",
         yaxis_title=f"{k}-Distance",
         title=f"k-Distance Graph (k={k})",
         hovermode="x unified"

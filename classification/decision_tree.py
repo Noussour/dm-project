@@ -116,7 +116,7 @@ def plot_decision_tree(model: DecisionTreeClassifier,
         fontsize=10,
     )
     
-    ax.set_title("Arbre de Décision C4.5", fontsize=14, fontweight='bold')
+    ax.set_title("C4.5 Decision Tree", fontsize=14, fontweight='bold')
     
     return fig
 

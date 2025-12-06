@@ -18,7 +18,7 @@ from classification.knn import evaluate_knn_k_range
 from config.constants import COLOR_PALETTE
 
 
-def render_confusion_matrix_plot(cm: np.ndarray, class_labels: list, title: str = "Matrice de Confusion"):
+def render_confusion_matrix_plot(cm: np.ndarray, class_labels: list, title: str = "Confusion Matrix"):
     """
     Render an interactive confusion matrix heatmap.
     
@@ -32,7 +32,7 @@ def render_confusion_matrix_plot(cm: np.ndarray, class_labels: list, title: str 
     
     fig = px.imshow(
         cm,
-        labels=dict(x="Prédit", y="Réel", color="Nombre"),
+        labels=dict(x="Predicted", y="Actual", color="Count"),
         x=class_labels_str,
         y=class_labels_str,
         color_continuous_scale="Blues",
@@ -41,14 +41,14 @@ def render_confusion_matrix_plot(cm: np.ndarray, class_labels: list, title: str 
     
     fig.update_layout(
         title=title,
-        xaxis_title="Classe prédite",
-        yaxis_title="Classe réelle",
+        xaxis_title="Predicted Class",
+        yaxis_title="Actual Class",
     )
     
     st.plotly_chart(fig, use_container_width=True)
 
 
-def render_metrics_summary(metrics: dict, title: str = "Métriques de performance"):
+def render_metrics_summary(metrics: dict, title: str = "Performance Metrics"):
     """
     Render metrics summary in columns.
     
@@ -67,15 +67,15 @@ def render_metrics_summary(metrics: dict, title: str = "Métriques de performanc
     
     with col2:
         precision = metrics.get("precision", metrics.get("precision_macro", 0)) * 100
-        st.metric("Précision", f"{precision:.2f}%")
+        st.metric("Precision", f"{precision:.2f}%")
     
     with col3:
         recall = metrics.get("recall", metrics.get("recall_macro", 0)) * 100
-        st.metric("Rappel", f"{recall:.2f}%")
+        st.metric("Recall", f"{recall:.2f}%")
     
     with col4:
         f1 = metrics.get("f1", metrics.get("f1_macro", 0)) * 100
-        st.metric("F-mesure", f"{f1:.2f}%")
+        st.metric("F-measure", f"{f1:.2f}%")
 
 
 def render_per_class_metrics(per_class: dict):
@@ -85,19 +85,19 @@ def render_per_class_metrics(per_class: dict):
     Args:
         per_class: Dictionary of per-class metrics
     """
-    st.markdown("### Métriques par classe")
+    st.markdown("### Per-class Metrics")
     
     # Build dataframe
     rows = []
     for class_label, metrics in per_class.items():
         rows.append({
-            "Classe": str(class_label),
+            "Class": str(class_label),
             "TP": metrics["TP"],
             "TN": metrics["TN"],
             "FP": metrics["FP"],
             "FN": metrics["FN"],
-            "Précision": f"{metrics['precision']*100:.2f}%",
-            "Rappel": f"{metrics['recall']*100:.2f}%",
+            "Precision": f"{metrics['precision']*100:.2f}%",
+            "Recall": f"{metrics['recall']*100:.2f}%",
             "F1": f"{metrics['f1']*100:.2f}%",
             "Support": metrics["support"],
         })
@@ -113,8 +113,8 @@ def render_knn_evaluation_tab(results: dict):
     Args:
         results: Results from evaluate_knn_k_range
     """
-    st.markdown("## Évaluation k-NN (k = 1 à 10)")
-    st.markdown("*Évaluation de k-NN pour différentes valeurs de k*")
+    st.markdown("## k-NN Evaluation (k = 1 to 10)")
+    st.markdown("*k-NN evaluation for different k values*")
     
     k_values = results["k_values"]
     
@@ -122,25 +122,25 @@ def render_knn_evaluation_tab(results: dict):
     df_results = pd.DataFrame({
         "k": k_values,
         "Accuracy (%)": [a * 100 for a in results["accuracy"]],
-        "Précision (%)": [p * 100 for p in results["precision"]],
-        "Rappel (%)": [r * 100 for r in results["recall"]],
-        "F-mesure (%)": [f * 100 for f in results["f1"]],
+        "Precision (%)": [p * 100 for p in results["precision"]],
+        "Recall (%)": [r * 100 for r in results["recall"]],
+        "F-measure (%)": [f * 100 for f in results["f1"]],
     })
     
     # Display best k
     col1, col2 = st.columns(2)
     with col1:
-        st.success(f"**Meilleur k (Accuracy)**: {results['best_k']} — {results['best_accuracy']*100:.2f}%")
+        st.success(f"**Best k (Accuracy)**: {results['best_k']} — {results['best_accuracy']*100:.2f}%")
     with col2:
-        st.info(f"**Meilleur k (F1)**: {results['best_k_f1']} — {results['best_f1']*100:.2f}%")
+        st.info(f"**Best k (F1)**: {results['best_k_f1']} — {results['best_f1']*100:.2f}%")
     
     # Display table
-    st.markdown("### Résultats pour chaque valeur de k")
-    st.dataframe(df_results.style.highlight_max(subset=["Accuracy (%)", "Précision (%)", "Rappel (%)", "F-mesure (%)"]),
+    st.markdown("### Results for each k value")
+    st.dataframe(df_results.style.highlight_max(subset=["Accuracy (%)", "Precision (%)", "Recall (%)", "F-measure (%)"]),
                  hide_index=True, use_container_width=True)
     
     # Precision/Accuracy curve
-    st.markdown("### Courbe de précision (Accuracy vs k)")
+    st.markdown("### Accuracy Curve (Accuracy vs k)")
     
     fig = go.Figure()
     
@@ -159,7 +159,7 @@ def render_knn_evaluation_tab(results: dict):
         x=k_values,
         y=[p * 100 for p in results["precision"]],
         mode='lines+markers',
-        name='Précision',
+        name='Precision',
         line=dict(color='green', width=2),
         marker=dict(size=8)
     ))
@@ -169,7 +169,7 @@ def render_knn_evaluation_tab(results: dict):
         x=k_values,
         y=[f * 100 for f in results["f1"]],
         mode='lines+markers',
-        name='F-mesure',
+        name='F-measure',
         line=dict(color='orange', width=2),
         marker=dict(size=8)
     ))
@@ -179,13 +179,13 @@ def render_knn_evaluation_tab(results: dict):
         x=results['best_k'],
         line_dash="dash",
         line_color="red",
-        annotation_text=f"Meilleur k = {results['best_k']}"
+        annotation_text=f"Best k = {results['best_k']}"
     )
     
     fig.update_layout(
-        xaxis_title="Nombre de voisins (k)",
+        xaxis_title="Number of neighbors (k)",
         yaxis_title="Score (%)",
-        title="Performance du k-NN en fonction de k",
+        title="k-NN Performance vs k",
         legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99),
         hovermode="x unified"
     )
@@ -193,11 +193,11 @@ def render_knn_evaluation_tab(results: dict):
     st.plotly_chart(fig, use_container_width=True)
     
     # Confusion matrices for each k
-    st.markdown("### Matrices de confusion par valeur de k")
+    st.markdown("### Confusion matrices by k value")
     
     # Select specific k to show
     selected_k = st.selectbox(
-        "Sélectionnez k pour voir la matrice de confusion",
+        "Select k to view confusion matrix",
         k_values,
         index=k_values.index(results['best_k'])
     )
@@ -206,7 +206,7 @@ def render_knn_evaluation_tab(results: dict):
     cm = results["confusion_matrices"][k_values.index(selected_k)]
     class_labels = results["per_k_results"][selected_k]["metrics"]["class_labels"]
     
-    render_confusion_matrix_plot(cm, class_labels, f"Matrice de confusion (k = {selected_k})")
+    render_confusion_matrix_plot(cm, class_labels, f"Confusion Matrix (k = {selected_k})")
 
 
 def render_single_classifier_results(result: dict, algo_name: str):
@@ -217,17 +217,17 @@ def render_single_classifier_results(result: dict, algo_name: str):
         result: Classification result dictionary
         algo_name: Name of the algorithm
     """
-    st.markdown(f"## Résultats: {algo_name}")
+    st.markdown(f"## Results: {algo_name}")
     
     # Overall metrics
     render_metrics_summary(result["metrics"])
     
     # Confusion matrix
-    st.markdown("### Matrice de Confusion")
+    st.markdown("### Confusion Matrix")
     render_confusion_matrix_plot(
         result["confusion_matrix"],
         result["class_labels"],
-        f"Matrice de Confusion - {algo_name}"
+        f"Confusion Matrix - {algo_name}"
     )
     
     # Per-class metrics
@@ -235,7 +235,7 @@ def render_single_classifier_results(result: dict, algo_name: str):
     
     # Additional info based on algorithm
     if algo_name == "C4.5" and "feature_importances" in result:
-        st.markdown("### Importance des features")
+        st.markdown("### Feature Importance")
         if result.get("feature_names"):
             importance_df = pd.DataFrame({
                 "Feature": result["feature_names"],
@@ -243,7 +243,7 @@ def render_single_classifier_results(result: dict, algo_name: str):
             }).sort_values("Importance", ascending=False)
             
             fig = px.bar(importance_df, x="Feature", y="Importance",
-                        title="Importance des features (C4.5)")
+                        title="Feature Importance (C4.5)")
             st.plotly_chart(fig, use_container_width=True)
 
 
@@ -254,7 +254,7 @@ def render_classifier_comparison(results: dict):
     Args:
         results: Dictionary with results per algorithm
     """
-    st.markdown("## Comparaison des Classifieurs")
+    st.markdown("## Classifier Comparison")
     
     # Build comparison dataframe
     comparison_data = []
@@ -265,36 +265,36 @@ def render_classifier_comparison(results: dict):
         
         metrics = result["metrics"]
         comparison_data.append({
-            "Algorithme": algo_name,
+            "Algorithm": algo_name,
             "Accuracy (%)": metrics.get("accuracy", 0) * 100,
-            "Précision (%)": metrics.get("precision", metrics.get("precision_macro", 0)) * 100,
-            "Rappel (%)": metrics.get("recall", metrics.get("recall_macro", 0)) * 100,
-            "F-mesure (%)": metrics.get("f1", metrics.get("f1_macro", 0)) * 100,
+            "Precision (%)": metrics.get("precision", metrics.get("precision_macro", 0)) * 100,
+            "Recall (%)": metrics.get("recall", metrics.get("recall_macro", 0)) * 100,
+            "F-measure (%)": metrics.get("f1", metrics.get("f1_macro", 0)) * 100,
         })
     
     df_comparison = pd.DataFrame(comparison_data)
     
     # Highlight best
-    st.markdown("### Tableau comparatif")
+    st.markdown("### Comparison Table")
     st.dataframe(
         df_comparison.style.highlight_max(
-            subset=["Accuracy (%)", "Précision (%)", "Rappel (%)", "F-mesure (%)"]
+            subset=["Accuracy (%)", "Precision (%)", "Recall (%)", "F-measure (%)"]
         ),
         hide_index=True,
         use_container_width=True
     )
     
     # Bar chart comparison
-    st.markdown("### Visualisation comparative")
+    st.markdown("### Comparative Visualization")
     
-    metrics_cols = ["Accuracy (%)", "Précision (%)", "Rappel (%)", "F-mesure (%)"]
+    metrics_cols = ["Accuracy (%)", "Precision (%)", "Recall (%)", "F-measure (%)"]
     
     fig = go.Figure()
     
     for metric in metrics_cols:
         fig.add_trace(go.Bar(
             name=metric.replace(" (%)", ""),
-            x=df_comparison["Algorithme"],
+            x=df_comparison["Algorithm"],
             y=df_comparison[metric],
             text=[f"{v:.1f}%" for v in df_comparison[metric]],
             textposition="auto",
@@ -302,10 +302,10 @@ def render_classifier_comparison(results: dict):
     
     fig.update_layout(
         barmode='group',
-        title="Comparaison des métriques par algorithme",
-        xaxis_title="Algorithme",
+        title="Metric Comparison by Algorithm",
+        xaxis_title="Algorithm",
         yaxis_title="Score (%)",
-        legend_title="Métrique",
+        legend_title="Metric",
     )
     
     st.plotly_chart(fig, use_container_width=True)
@@ -313,9 +313,9 @@ def render_classifier_comparison(results: dict):
     # Find best algorithm
     if len(comparison_data) > 0:
         best_idx = df_comparison["Accuracy (%)"].idxmax()
-        best_algo = df_comparison.loc[best_idx, "Algorithme"]
+        best_algo = df_comparison.loc[best_idx, "Algorithm"]
         best_accuracy = df_comparison.loc[best_idx, "Accuracy (%)"]
-        st.success(f"**Meilleur classifieur**: {best_algo} avec {best_accuracy:.2f}% d'accuracy")
+        st.success(f"**Best Classifier**: {best_algo} with {best_accuracy:.2f}% accuracy")
 
 
 def render_classification_results_tab(df: pd.DataFrame, selected_features: list,
@@ -338,13 +338,13 @@ def render_classification_results_tab(df: pd.DataFrame, selected_features: list,
     
     # Validate target column exists
     if target_col not in df.columns:
-        st.error(f"❌ La colonne cible '{target_col}' n'existe pas dans le dataset. Veuillez sélectionner une colonne valide.")
+        st.error(f"❌ Target column '{target_col}' does not exist in dataset. Please select a valid column.")
         return
     
     # Validate selected features exist
     missing_features = [f for f in selected_features if f not in df.columns]
     if missing_features:
-        st.error(f"❌ Les features suivantes n'existent pas dans le dataset: {missing_features}")
+        st.error(f"❌ The following features do not exist in dataset: {missing_features}")
         return
     
     # Validate target is not continuous
@@ -353,12 +353,12 @@ def render_classification_results_tab(df: pd.DataFrame, selected_features: list,
     
     if target_type == 'continuous' or target_type == 'continuous-multioutput':
         st.error(
-            f"❌ La variable cible '{target_col}' contient des valeurs continues (type détecté: {target_type}). "
-            "La classification nécessite des classes discrètes (catégorielles). "
-            "\n\n**Solutions possibles:**"
-            "\n- Sélectionnez une autre colonne comme cible"
-            "\n- Discrétisez la colonne (ex: convertir en catégories)"
-            "\n- Utilisez un algorithme de régression au lieu de classification"
+            f"❌ Target variable '{target_col}' contains continuous values (detected type: {target_type}). "
+            "Classification requires discrete classes (categorical). "
+            "\n\n**Possible solutions:**"
+            "\n- Select another column as target"
+            "\n- Discretize the column (e.g. convert to categories)"
+            "\n- Use a regression algorithm instead of classification"
         )
         return
     
@@ -381,8 +381,8 @@ def render_classification_results_tab(df: pd.DataFrame, selected_features: list,
         X_check = df[selected_features]
         nb_type = classifier_params.get("type", "gaussian")
         if nb_type == "multinomial" and (X_check < 0).any().any():
-            st.error("❌ Le Naive Bayes Multinomial ne peut pas être utilisé avec des valeurs négatives. "
-                    "Veuillez normaliser vos données (Min-Max) ou utiliser le type Gaussian.")
+            st.error("❌ Multinomial Naive Bayes cannot be used with negative values. "
+                    "Please normalize your data (Min-Max) or use Gaussian type.")
             return
         if nb_type == "bernoulli":
             # Check if data looks binary
@@ -390,8 +390,8 @@ def render_classification_results_tab(df: pd.DataFrame, selected_features: list,
             for col in selected_features:
                 unique_values.update(X_check[col].unique())
             if not all(v in [0, 1] or pd.isna(v) for v in unique_values):
-                st.warning("⚠️ Le Naive Bayes Bernoulli est optimisé pour des données binaires (0/1). "
-                          "Vos données ne semblent pas être binaires.")
+                st.warning("⚠️ Bernoulli Naive Bayes is optimized for binary data (0/1). "
+                          "Your data does not appear to be binary.")
     
     # Prepare data
     X = df[selected_features].values
@@ -406,14 +406,14 @@ def render_classification_results_tab(df: pd.DataFrame, selected_features: list,
         k_value = classifier_params.get("k", 5)
         if not classifier_params.get("evaluate_range", False):
             if min_class_count < k_value:
-                st.warning(f"⚠️ La classe la moins représentée n'a que {min_class_count} échantillons, "
-                          f"ce qui est inférieur à k={k_value}. Résultats potentiellement biaisés.")
+                st.warning(f"⚠️ The least represented class has only {min_class_count} samples, "
+                          f"which is fewer than k={k_value}. Results potentially biased.")
     
     # Determine if stratification is possible
     can_stratify = split_config["stratify"] and min_class_count >= 2
     
     if split_config["stratify"] and not can_stratify:
-        st.warning(f"⚠️ Stratification désactivée: certaines classes ont moins de 2 échantillons (minimum: {min_class_count}).")
+        st.warning(f"⚠️ Stratification disabled: some classes have fewer than 2 samples (minimum: {min_class_count}).")
     
     stratify_val = y if can_stratify else None
     
@@ -425,12 +425,12 @@ def render_classification_results_tab(df: pd.DataFrame, selected_features: list,
             stratify=stratify_val
         )
     except ValueError as e:
-        st.error(f"Erreur lors du partitionnement: {e}")
-        st.info("Essayez de désactiver la stratification ou d'utiliser un dataset avec plus d'échantillons par classe.")
+        st.error(f"Error during splitting: {e}")
+        st.info("Try disabling stratification or using a dataset with more samples per class.")
         return
     
-    st.markdown(f"**Ensemble d'apprentissage**: {len(X_train)} instances ({(1-split_config['test_size'])*100:.0f}%)")
-    st.markdown(f"**Ensemble de test**: {len(X_test)} instances ({split_config['test_size']*100:.0f}%)")
+    st.markdown(f"**Training Set**: {len(X_train)} instances ({(1-split_config['test_size'])*100:.0f}%)")
+    st.markdown(f"**Test Set**: {len(X_test)} instances ({split_config['test_size']*100:.0f}%)")
     st.markdown("---")
     
     # Special handling for k-NN with range evaluation
@@ -471,7 +471,7 @@ def render_all_classifiers_comparison(df: pd.DataFrame, selected_features: list,
     
     # Validate target column
     if target_col not in df.columns:
-        st.error(f"❌ La colonne cible '{target_col}' n'existe pas dans le dataset.")
+        st.error(f"❌ Target column '{target_col}' does not exist in dataset.")
         return
     
     # Validate target is not continuous
@@ -480,17 +480,17 @@ def render_all_classifiers_comparison(df: pd.DataFrame, selected_features: list,
     
     if target_type == 'continuous' or target_type == 'continuous-multioutput':
         st.error(
-            f"❌ La variable cible '{target_col}' contient des valeurs continues (type: {target_type}). "
-            "La classification nécessite des classes discrètes. "
-            "Sélectionnez une colonne catégorielle comme cible."
+            f"❌ Target variable '{target_col}' contains continuous values (type: {target_type}). "
+            "Classification requires discrete classes. "
+            "Select a categorical column as target."
         )
         return
     
     # Check for missing values
     X_check = df[selected_features]
     if X_check.isnull().any().any():
-        st.error("❌ Le dataset contient des valeurs manquantes dans les features sélectionnées. "
-                "Veuillez effectuer un prétraitement pour gérer les valeurs manquantes.")
+        st.error("❌ Dataset contains missing values in selected features. "
+                "Please perform preprocessing to handle missing values.")
         return
     
     # Prepare data
@@ -502,7 +502,7 @@ def render_all_classifiers_comparison(df: pd.DataFrame, selected_features: list,
     n_classes = len(unique_classes)
     
     if n_classes < 2:
-        st.error("❌ La classification nécessite au moins 2 classes distinctes dans la variable cible.")
+        st.error("❌ Classification requires at least 2 distinct classes in target variable.")
         return
     
     min_class_count = class_counts.min()
@@ -511,7 +511,7 @@ def render_all_classifiers_comparison(df: pd.DataFrame, selected_features: list,
     can_stratify = split_config["stratify"] and min_class_count >= 2
     
     if split_config["stratify"] and not can_stratify:
-        st.warning(f"⚠️ Stratification désactivée: certaines classes ont moins de 2 échantillons (minimum: {min_class_count}).")
+        st.warning(f"⚠️ Stratification disabled: some classes have fewer than 2 samples (minimum: {min_class_count}).")
     
     stratify_val = y if can_stratify else None
     
@@ -523,23 +523,23 @@ def render_all_classifiers_comparison(df: pd.DataFrame, selected_features: list,
             stratify=stratify_val
         )
     except ValueError as e:
-        st.error(f"Erreur lors du partitionnement: {e}")
-        st.info("Essayez de désactiver la stratification ou d'utiliser un dataset avec plus d'échantillons par classe.")
+        st.error(f"Error during splitting: {e}")
+        st.info("Try disabling stratification or using a dataset with more samples per class.")
         return
     
-    st.markdown(f"**Ensemble d'apprentissage**: {len(X_train)} instances")
-    st.markdown(f"**Ensemble de test**: {len(X_test)} instances")
+    st.markdown(f"**Training Set**: {len(X_train)} instances")
+    st.markdown(f"**Test Set**: {len(X_test)} instances")
     st.markdown("---")
     
     # Run all classifiers with default params
-    with st.spinner("Exécution de tous les classifieurs..."):
+    with st.spinner("Running all classifiers..."):
         results = compare_classifiers(X_train, y_train, X_test, y_test)
     
     render_classifier_comparison(results)
     
     # Individual results in expanders
     st.markdown("---")
-    st.markdown("### Détails par algorithme")
+    st.markdown("### Details by algorithm")
     
     for algo_name, result in results.items():
         if "error" in result:
@@ -550,6 +550,6 @@ def render_all_classifiers_comparison(df: pd.DataFrame, selected_features: list,
             render_confusion_matrix_plot(
                 result["confusion_matrix"],
                 result["class_labels"],
-                f"Matrice de Confusion - {algo_name}"
+                f"Confusion Matrix - {algo_name}"
             )
             render_per_class_metrics(result["per_class_metrics"])

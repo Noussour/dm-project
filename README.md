@@ -1,103 +1,103 @@
 # 🔬 Data Mining Explorer
 
-> **Application pédagogique interactive de Clustering & Classification**  
-> Semestre 7 - Université des Sciences et de la Technologie d'Oran
+> **Interactive Educational Clustering & Classification Application**  
+> Semester 7 - University of Science and Technology of Oran
 
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-Latest-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://docker.com)
 
-Une application web interactive permettant d'explorer, comparer et comprendre les algorithmes de **clustering** et de **classification supervisée** sur des jeux de données réels ou personnalisés.
+An interactive web application allowing users to explore, compare, and understand **clustering** and **supervised classification** algorithms on real or custom datasets.
 
 ---
 
-## 📸 Aperçu de l'Application
+## 📸 Application Overview
 
-### Prétraitement des Données
+### Data Preprocessing
 <p align="center">
-  <img src="screenshots/preprocessing.png" alt="Prétraitement" width="90%"/>
+  <img src="screenshots/preprocessing.png" alt="Preprocessing" width="90%"/>
 </p>
 
 ### Clustering
 <table>
   <tr>
-    <td width="50%"><img src="screenshots/clustering_3d.png" alt="Clustering 3D"/></td>
-    <td width="50%"><img src="screenshots/clustering_metrics.png" alt="Métriques Clustering"/></td>
+    <td width="50%"><img src="screenshots/clustering_3d.png" alt="3D Clustering"/></td>
+    <td width="50%"><img src="screenshots/clustering_metrics.png" alt="Clustering Metrics"/></td>
   </tr>
   <tr>
-    <td align="center"><em>Visualisation 3D des clusters</em></td>
-    <td align="center"><em>Métriques d'évaluation</em></td>
+    <td align="center"><em>3D Cluster Visualization</em></td>
+    <td align="center"><em>Evaluation Metrics</em></td>
   </tr>
 </table>
 
-### Classification Supervisée
+### Supervised Classification
 <table>
   <tr>
     <td width="50%"><img src="screenshots/classification.png" alt="Classification"/></td>
-    <td width="50%"><img src="screenshots/classifiers_comparision.png" alt="Comparaison Classifieurs"/></td>
+    <td width="50%"><img src="screenshots/classifiers_comparision.png" alt="Classifiers Comparison"/></td>
   </tr>
   <tr>
-    <td align="center"><em>Résultats de classification</em></td>
-    <td align="center"><em>Comparaison des algorithmes</em></td>
+    <td align="center"><em>Classification Results</em></td>
+    <td align="center"><em>Algorithm Comparison</em></td>
   </tr>
 </table>
 
 ---
 
-## 🎯 Fonctionnalités Principales
+## 🎯 Key Features
 
-### ✅ Chargement des Données
-- **6 datasets prédéfinis** prêts à l'emploi (IRIS, Breast Cancer, Heart Disease, etc.)
-- **Upload personnalisé** de fichiers CSV/Excel
-- Détection automatique des valeurs manquantes
-- Aperçu statistique (5-number summary)
+### ✅ Data Loading
+- **6 predefined datasets** ready to use (IRIS, Breast Cancer, Heart Disease, etc.)
+- **Custom upload** of CSV/Excel files
+- Automatic detection of missing values
+- Statistical overview (5-number summary)
 
-### ✅ Prétraitement Intelligent
-- Suppression des outliers (IQR, Z-score)
-- Gestion des valeurs manquantes (suppression, moyenne, médiane, mode)
-- Normalisation (Min-Max, Z-score, Robust Scaler)
-- Sauvegarde de multiples versions prétraitées
+### ✅ Smart Preprocessing
+- Outlier removal (IQR, Z-score)
+- Missing value handling (deletion, mean, median, mode)
+- Normalization (Min-Max, Z-score, Robust Scaler)
+- Saving simple preprocessed versions
 
-### ✅ Clustering Non-Supervisé
-- 5 algorithmes : K-Means, K-Medoids, DBSCAN, AGNES, DIANA
-- Détection automatique des meilleurs paramètres
-- Métriques : Silhouette, Calinski-Harabasz, Davies-Bouldin
+### ✅ Unsupervised Clustering
+- 5 algorithms: K-Means, K-Medoids, DBSCAN, AGNES, DIANA
+- Automatic detection of best parameters
+- Metrics: Silhouette, Calinski-Harabasz, Davies-Bouldin
 
-### ✅ Classification Supervisée
-- 4 algorithmes : k-NN, Naive Bayes, C4.5, SVM
-- Évaluation k de 1 à 10 pour k-NN
-- Métriques : Précision, Rappel, F-mesure, Matrice de confusion
+### ✅ Supervised Classification
+- 4 algorithms: k-NN, Naive Bayes, C4.5, SVM
+- Evalution of k from 1 to 10 for k-NN
+- Metrics: Precision, Recall, F-measure, Confusion Matrix
 
-### ✅ Visualisations Interactives
-- Scatter plots 2D/3D avec Plotly
-- Dendrogrammes pour clustering hiérarchique
-- Courbes Elbow et Silhouette
-- Graphiques k-distance pour DBSCAN
+### ✅ Interactive Visualizations
+- 2D/3D Scatter plots with Plotly
+- Dendrograms for hierarchical clustering
+- Elbow and Silhouette curves
+- k-distance graphs for DBSCAN
 
-### ✅ Validation Intelligente
-- Détection des cas impossibles (données continues pour classification)
-- Alertes pour valeurs manquantes
-- Contraintes d'algorithmes respectées
+### ✅ Smart Validation
+- Detection of impossible cases (continuous data for classification)
+- Alerts for missing values
+- Respected algorithm constraints
 
 ---
 
-## 🗺️ Architecture de l'Application
+## 🗺️ Application Architecture
 
 ```mermaid
 flowchart TB
-    subgraph USER["👤 Utilisateur"]
+    subgraph USER["👤 User"]
         Upload["📤 Upload Dataset"]
-        Predefined["📁 Dataset Prédéfini"]
+        Predefined["📁 Predefined Dataset"]
     end
 
-    subgraph APP["🔬 Application Streamlit"]
-        subgraph LOAD["📂 Chargement"]
+    subgraph APP["🔬 Streamlit Application"]
+        subgraph LOAD["📂 Loading"]
             DataLoader["data_loader.py"]
             Validation["Validation"]
         end
 
-        subgraph PREPROCESS["⚙️ Prétraitement"]
+        subgraph PREPROCESS["⚙️ Preprocessing"]
             Outliers["Outliers Detection"]
             Missing["Missing Values"]
             Normalize["Normalization"]
@@ -118,7 +118,7 @@ flowchart TB
             SVM["SVM"]
         end
 
-        subgraph VIZ["📊 Visualisation"]
+        subgraph VIZ["📊 Visualization"]
             Scatter2D["2D Scatter"]
             Scatter3D["3D Scatter"]
             Dendro["Dendrogram"]
@@ -126,9 +126,9 @@ flowchart TB
         end
     end
 
-    subgraph OUTPUT["📈 Résultats"]
-        Metrics["Métriques"]
-        Compare["Comparaison"]
+    subgraph OUTPUT["📈 Results"]
+        Metrics["Metrics"]
+        Compare["Comparison"]
         Export["Export"]
     end
 
@@ -146,48 +146,48 @@ flowchart TB
 
 ---
 
-## 📁 Structure du Projet
+## 📁 Project Structure
 
 ```
 DM-Project/
-├── app.py                 # Point d'entrée principal
-├── requirements.txt       # Dépendances Python
-├── Dockerfile            # Configuration Docker
-├── docker-compose.yaml   # Orchestration Docker
+├── app.py                 # Main entry point
+├── requirements.txt       # Python dependencies
+├── Dockerfile            # Docker configuration
+├── docker-compose.yaml   # Docker orchestration
 │
 ├── config/               # Configuration
-│   ├── constants.py      # Constantes & datasets prédéfinis
-│   └── settings.py       # Paramètres application
+│   ├── constants.py      # Constants & predefined datasets
+│   └── settings.py       # Application settings
 │
-├── utils/                # Utilitaires
-│   ├── data_loader.py    # Chargement & validation données
-│   ├── preprocessing.py  # Transformations données
-│   └── metrics.py        # Calculs métriques
+├── utils/                # Utilities
+│   ├── data_loader.py    # Data loading & validation
+│   ├── preprocessing.py  # Data transformations
+│   └── metrics.py        # Metrics calculations
 │
-├── clustering/           # Algorithmes de clustering
+├── clustering/           # Clustering algorithms
 │   ├── kmeans.py         # K-Means
 │   ├── kmedoids.py       # K-Medoids
 │   ├── dbscan.py         # DBSCAN
-│   ├── agnes.py          # AGNES (hiérarchique ↑)
-│   └── diana.py          # DIANA (hiérarchique ↓)
+│   ├── agnes.py          # AGNES (hierarchical ↑)
+│   └── diana.py          # DIANA (hierarchical ↓)
 │
-├── classification/       # Algorithmes de classification
+├── classification/       # Classification algorithms
 │   ├── knn.py            # k-NN
 │   ├── naive_bayes.py    # Naive Bayes
 │   ├── decision_tree.py  # C4.5
 │   └── svm.py            # SVM
 │
-├── components/           # Composants UI Streamlit
-│   ├── sidebar.py        # Sidebar clustering
+├── components/           # Streamlit UI Components
+│   ├── sidebar.py        # Clustering sidebar
 │   ├── classification_sidebar.py
-│   ├── tabs.py           # Onglets clustering
+│   ├── tabs.py           # Clustering tabs
 │   └── classification_tabs.py
 │
-├── visualization/        # Visualisations
-│   ├── plots.py          # Graphiques Plotly
-│   └── colors.py         # Palettes couleurs
+├── visualization/        # Visualizations
+│   ├── plots.py          # Plotly charts
+│   └── colors.py         # Color palettes
 │
-└── datasets/             # Datasets prédéfinis
+└── datasets/             # Predefined datasets
     ├── IRIS 1.csv
     ├── breast.csv
     ├── heart.csv
@@ -196,98 +196,98 @@ DM-Project/
 
 ---
 
-## 🤖 Algorithmes Disponibles
+## 🤖 Available Algorithms
 
-### 🔵 Clustering (Non-Supervisé)
+### 🔵 Clustering (Unsupervised)
 
-| Algorithme | Type | Description | Paramètres |
+| Algorithm | Type | Description | Parameters |
 |:-----------|:-----|:------------|:-----------|
-| **K-Means** | Partitionnement | Minimise l'inertie intra-cluster via centroïdes | `n_clusters`, `init` |
-| **K-Medoids** | Partitionnement | Utilise des médoïdes (robuste aux outliers) | `n_clusters`, `metric` |
-| **DBSCAN** | Densité | Détecte clusters de forme arbitraire + bruit | `eps`, `min_samples` |
-| **AGNES** | Hiérarchique ↑ | Agglomération ascendante (bottom-up) | `n_clusters`, `linkage` |
-| **DIANA** | Hiérarchique ↓ | Division descendante (top-down) | `n_clusters`, `metric` |
+| **K-Means** | Partitioning | Minimizes intra-cluster inertia via centroids | `n_clusters`, `init` |
+| **K-Medoids** | Partitioning | Uses medoids (robust to outliers) | `n_clusters`, `metric` |
+| **DBSCAN** | Density | Detects arbitrarily shaped clusters + noise | `eps`, `min_samples` |
+| **AGNES** | Hierarchical ↑ | Ascending agglomeration (bottom-up) | `n_clusters`, `linkage` |
+| **DIANA** | Hierarchical ↓ | Descending division (top-down) | `n_clusters`, `metric` |
 
-### 🟢 Classification (Supervisée)
+### 🟢 Classification (Supervised)
 
-| Algorithme | Type | Description | Paramètres |
+| Algorithm | Type | Description | Parameters |
 |:-----------|:-----|:------------|:-----------|
-| **k-NN** | Instance-based | Vote majoritaire des k plus proches voisins | `k`, `metric`, `weights` |
-| **Naive Bayes** | Probabiliste | Classifieur bayésien avec indépendance naïve | `type` (gaussian/multinomial/bernoulli) |
-| **C4.5** | Arbre de décision | Gain d'information / ratio de gain | `criterion`, `max_depth`, `min_samples` |
-| **SVM** | Marge maximale | Hyperplan séparateur optimal | `kernel`, `C`, `gamma` |
+| **k-NN** | Instance-based | Majority vote of k nearest neighbors | `k`, `metric`, `weights` |
+| **Naive Bayes** | Probabilistic | Bayesian classifier with naive independence | `type` (gaussian/multinomial/bernoulli) |
+| **C4.5** | Decision Tree | Information gain / gain ratio | `criterion`, `max_depth`, `min_samples` |
+| **SVM** | Maximum Margin | Optimal separating hyperplane | `kernel`, `C`, `gamma` |
 
 ---
 
-## 📊 Datasets Prédéfinis
+## 📊 Predefined Datasets
 
-| Dataset | Instances | Features | Classes | Valeurs Manquantes | Recommandé Pour |
+| Dataset | Instances | Features | Classes | Missing Values | Recommended For |
 |:--------|:---------:|:--------:|:-------:|:------------------:|:----------------|
-| 🌸 **IRIS** | 150 | 4 | 3 | ❌ Non | Clustering, Classification |
-| 🎗️ **Breast Cancer** | 569 | 18 | 2 | ❌ Non | Clustering, Classification |
-| ❤️ **Heart Disease** | 303 | 13 | 2 | ❌ Non | Clustering, Classification |
-| 🦠 **Ecoli** | 336 | 7 | 8 | ❌ Non | Clustering, Classification |
-| 🏥 **Hepatitis** | 155 | 19 | 2 | ⚠️ Oui | Classification (après prétraitement) |
-| 🐴 **Horse Colic** | 300 | 27 | 3 | ⚠️ Oui | Classification (après prétraitement) |
+| 🌸 **IRIS** | 150 | 4 | 3 | ❌ No | Clustering, Classification |
+| 🎗️ **Breast Cancer** | 569 | 18 | 2 | ❌ No | Clustering, Classification |
+| ❤️ **Heart Disease** | 303 | 13 | 2 | ❌ No | Clustering, Classification |
+| 🦠 **Ecoli** | 336 | 7 | 8 | ❌ No | Clustering, Classification |
+| 🏥 **Hepatitis** | 155 | 19 | 2 | ⚠️ Yes | Classification (after preprocessing) |
+| 🐴 **Horse Colic** | 300 | 27 | 3 | ⚠️ Yes | Classification (after preprocessing) |
 
 ---
 
-## 📈 Métriques d'Évaluation
+## 📈 Evaluation Metrics
 
 ### Clustering
 
-| Métrique | Plage | Optimal | Interprétation |
+| Metric | Range | Optimal | Interpretation |
 |:---------|:-----:|:-------:|:---------------|
-| **Silhouette Score** | [-1, 1] | → 1 | Mesure cohésion vs séparation |
-| **Calinski-Harabasz** | [0, +∞) | ↑ Haut | Ratio variance inter/intra cluster |
-| **Davies-Bouldin** | [0, +∞) | ↓ Bas | Similarité moyenne entre clusters |
-| **Inertie (WCSS)** | [0, +∞) | ↓ Bas | Somme des distances² intra-cluster |
+| **Silhouette Score** | [-1, 1] | → 1 | Measures cohesion vs separation |
+| **Calinski-Harabasz** | [0, +∞) | ↑ High | Inter/intra cluster variance ratio |
+| **Davies-Bouldin** | [0, +∞) | ↓ Low | Average similarity between clusters |
+| **Inertia (WCSS)** | [0, +∞) | ↓ Low | Sum of intra-cluster squared distances |
 
 ### Classification
 
-| Métrique | Formule | Interprétation |
+| Metric | Formula | Interpretation |
 |:---------|:--------|:---------------|
-| **Accuracy** | (TP+TN) / Total | Taux de prédictions correctes |
-| **Précision** | TP / (TP+FP) | Fiabilité des prédictions positives |
-| **Rappel** | TP / (TP+FN) | Capacité à trouver tous les positifs |
-| **F1-Score** | 2×(P×R)/(P+R) | Moyenne harmonique précision/rappel |
+| **Accuracy** | (TP+TN) / Total | Correct prediction rate |
+| **Precision** | TP / (TP+FP) | Reliability of positive predictions |
+| **Recall** | TP / (TP+FN) | Ability to find all positives |
+| **F1-Score** | 2×(P×R)/(P+R) | Harmonic mean of precision/recall |
 
 ---
 
 ## 🚀 Installation
 
-### Prérequis
+### Prerequisites
 
 - **Python 3.11+**
-- **pip** (gestionnaire de paquets Python)
+- **pip** (Python package manager)
 
-### Installation Locale
+### Local Installation
 
 ```bash
-# 1. Cloner le repository
+# 1. Clone the repository
 git clone https://github.com/Noussour/dm-project.git
 cd dm-project
 
-# 2. Créer un environnement virtuel (recommandé)
+# 2. Create a virtual environment (recommended)
 python -m venv .venv
 
-# Activer l'environnement
+# Activate the environment
 source .venv/bin/activate      # macOS/Linux
 # .venv\Scripts\activate       # Windows
 
-# 3. Installer les dépendances
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Lancer l'application
+# 4. Run the application
 streamlit run app.py
 ```
 
-🌐 **Accès** : http://localhost:8501
+🌐 **Access**: http://localhost:8501
 
-### 🐳 Installation Docker
+### 🐳 Docker Installation
 
 ```bash
-# Option 1: Docker Compose (recommandé)
+# Option 1: Docker Compose (recommended)
 docker-compose up --build
 
 # Option 2: Docker direct
@@ -297,75 +297,75 @@ docker run -p 8501:8501 dm-explorer
 
 ---
 
-## 💻 Guide d'Utilisation
+## 💻 User Guide
 
-### Étape 1 : Charger les Données
+### Step 1: Load Data
 
-1. **Dataset prédéfini** : Sélectionnez dans le menu déroulant et cliquez "Charger"
-2. **Upload** : Glissez-déposez un fichier CSV/Excel
+1. **Predefined Dataset**: Select from the dropdown and click "Load"
+2. **Upload**: Drag and drop a CSV/Excel file
 
-### Étape 2 : Prétraitement (si nécessaire)
+### Step 2: Preprocessing (if necessary)
 
-1. Naviguez vers l'onglet **Prétraitement**
-2. Configurez :
-   - **Outliers** : IQR ou Z-score
-   - **Valeurs manquantes** : Suppression, moyenne, médiane, mode
-   - **Normalisation** : Min-Max, Z-score, Robust
-3. Cliquez **Exécuter le pipeline**
+1. Navigate to the **Preprocessing** tab
+2. Configure:
+   - **Outliers**: IQR or Z-score
+   - **Missing Values**: Deletion, mean, median, mode
+   - **Normalization**: Min-Max, Z-score, Robust
+3. Click **Run Pipeline**
 
-### Étape 3 : Clustering
+### Step 3: Clustering
 
-1. Naviguez vers **Clustering**
-2. Sélectionnez l'algorithme (K-Means, DBSCAN, etc.)
-3. Ajustez les paramètres ou cliquez **Meilleurs params**
-4. Cliquez **Exécuter**
-5. Explorez les onglets : Visualisation, Métriques, Graphiques
+1. Navigate to **Clustering**
+2. Select the algorithm (K-Means, DBSCAN, etc.)
+3. Adjust parameters or click **Best Params**
+4. Click **Run**
+5. Explore the tabs: Visualization, Metrics, Charts
 
-### Étape 4 : Classification
+### Step 4: Classification
 
-1. Naviguez vers **Classification**
-2. Sélectionnez la **variable cible** (classes)
-3. Configurez le **split train/test** (80/20 par défaut)
-4. Choisissez l'algorithme
-5. Cliquez **Classifier** ou **Comparer tous**
+1. Navigate to **Classification**
+2. Select the **target variable** (classes)
+3. Configure **train/test split** (80/20 default)
+4. Choose the algorithm
+5. Click **Classify** or **Compare All**
 
 ---
 
-## ⚠️ Validation et Contraintes
+## ⚠️ Validation and Constraints
 
-L'application détecte automatiquement les cas problématiques :
+The application automatically detects problematic cases:
 
 | Situation | Action |
 |:----------|:-------|
-| Valeurs manquantes + Clustering | ❌ Bloque l'exécution |
-| Variable cible continue | ❌ Erreur avec suggestion |
-| Trop peu d'échantillons | ⚠️ Avertissement |
-| Classes déséquilibrées | ⚠️ Avertissement |
-| n_clusters ≥ n_samples | ❌ Erreur de paramètre |
-| Dendrogramme > 1000 points | ⚠️ Désactivé |
+| Missing values + Clustering | ❌ Blocks execution |
+| Continuous target variable | ❌ Error with suggestion |
+| Too few samples | ⚠️ Warning |
+| Imbalanced classes | ⚠️ Warning |
+| n_clusters ≥ n_samples | ❌ Parameter error |
+| Dendrogram > 1000 points | ⚠️ Disabled |
 
 ---
 
 ## 🛠️ Technologies
 
-| Technologie | Version | Rôle |
+| Technology | Version | Role |
 |:------------|:-------:|:-----|
-| **Streamlit** | 1.28+ | Framework UI web |
-| **scikit-learn** | Latest | Algorithmes ML |
-| **Plotly** | Latest | Visualisations interactives |
-| **Pandas** | Latest | Manipulation données |
-| **NumPy** | Latest | Calculs numériques |
-| **SciPy** | Latest | Clustering hiérarchique |
-| **Matplotlib/Seaborn** | Latest | Graphiques statiques |
+| **Streamlit** | 1.28+ | Web UI Framework |
+| **scikit-learn** | Latest | ML Algorithms |
+| **Plotly** | Latest | Interactive Visualizations |
+| **Pandas** | Latest | Data Manipulation |
+| **NumPy** | Latest | Numerical Calculations |
+| **SciPy** | Latest | Hierarchical Clustering |
+| **Matplotlib/Seaborn** | Latest | Static Charts |
 
 ---
 
-## 📝 Notes Pédagogiques
+## 📝 Educational Notes
 
-Cette application a été développée pour permettre aux étudiants de :
+This application was developed to allow students to:
 
-1. **Comprendre** les différences fondamentales entre algorithmes
-2. **Visualiser** l'impact des hyperparamètres sur les résultats
-3. **Comparer** objectivement les performances via métriques standardisées
-4. **Explorer** le prétraitement et son importance sur la qualité des modèles
-5. **Apprendre** les bonnes pratiques (validation, split train/test, etc.)
+1. **Understand** the fundamental differences between algorithms
+2. **Visualize** the impact of hyperparameters on results
+3. **Compare** performance objectively via standardized metrics
+4. **Explore** preprocessing and its importance on model quality
+5. **Learn** best practices (validation, train/test split, etc.)

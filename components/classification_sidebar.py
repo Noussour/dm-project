@@ -22,15 +22,15 @@ def render_target_selection(df: pd.DataFrame) -> str | None:
     all_cols = df.columns.tolist()
     
     if len(all_cols) == 0:
-        st.sidebar.warning("Le dataset est vide.")
+        st.sidebar.warning("The dataset is empty.")
         return None
     
-    st.sidebar.markdown("### Sélection de la cible")
+    st.sidebar.markdown("### Target Selection")
     
     target_col = st.sidebar.selectbox(
-        "Variable cible (classe)",
+        "Target Variable (Class)",
         all_cols,
-        help="Sélectionnez la colonne contenant les étiquettes de classe (valeurs discrètes)"
+        help="Select the column containing class labels (discrete values)"
     )
     
     # Validate target column
@@ -50,24 +50,24 @@ def render_target_selection(df: pd.DataFrame) -> str | None:
         
         if is_likely_continuous:
             st.sidebar.error(
-                f"⚠️ La colonne '{target_col}' semble contenir des valeurs continues "
-                f"({n_unique} valeurs uniques). La classification nécessite des classes discrètes. "
-                "Choisissez une autre colonne ou discrétisez vos données."
+                f"⚠️ The column '{target_col}' seems to contain continuous values "
+                f"({n_unique} unique values). Classification requires discrete classes. "
+                "Choose another column or discretize your data."
             )
             return None
         
         # Warning for too many classes
         if n_unique > 50:
             st.sidebar.warning(
-                f"⚠️ La colonne '{target_col}' contient {n_unique} classes différentes. "
-                "Un grand nombre de classes peut affecter les performances."
+                f"⚠️ The column '{target_col}' contains {n_unique} different classes. "
+                "A large number of classes can affect performance."
             )
         
         # Show class distribution
-        with st.sidebar.expander("Distribution des classes"):
+        with st.sidebar.expander("Class Distribution"):
             class_counts = df[target_col].value_counts()
             st.bar_chart(class_counts)
-            st.write(f"Nombre de classes: {len(class_counts)}")
+            st.write(f"Number of classes: {len(class_counts)}")
             
             # Warn about imbalanced classes
             if len(class_counts) >= 2:
@@ -75,8 +75,8 @@ def render_target_selection(df: pd.DataFrame) -> str | None:
                 min_count = class_counts.min()
                 if max_count > min_count * 10:
                     st.warning(
-                        f"⚠️ Classes déséquilibrées: la plus grande classe ({max_count}) "
-                        f"est {max_count/min_count:.1f}x plus grande que la plus petite ({min_count})."
+                        f"⚠️ Imbalanced classes: the largest class ({max_count}) "
+                        f"is {max_count/min_count:.1f}x larger than the smallest ({min_count})."
                     )
     
     return target_col
@@ -99,16 +99,16 @@ def render_feature_selection_classification(df: pd.DataFrame, target_col: str) -
     numeric_cols = [c for c in df.columns if c != target_col and np.issubdtype(df[c].dtype, np.number)]
     
     if len(numeric_cols) == 0:
-        st.sidebar.warning("Aucune colonne numérique disponible comme feature.")
+        st.sidebar.warning("No numeric column available as feature.")
         return []
     
-    st.sidebar.markdown("### Sélection des features")
+    st.sidebar.markdown("### Feature Selection")
     
     selected_features = st.sidebar.multiselect(
-        "Features pour la classification",
+        "Features for classification",
         numeric_cols,
         default=numeric_cols,
-        help="Sélectionnez les colonnes numériques à utiliser comme features"
+        help="Select numeric columns to use as features"
     )
     
     return selected_features
@@ -121,29 +121,29 @@ def render_train_test_split() -> dict:
     Returns:
         Dictionary with split configuration
     """
-    st.sidebar.markdown("### Partitionnement des données")
+    st.sidebar.markdown("### Data Splitting")
     
     test_size = st.sidebar.slider(
-        "Taille de l'ensemble de test (%)",
+        "Test Set Size (%)",
         min_value=10,
         max_value=50,
         value=int(DEFAULT_TEST_SIZE * 100),
         step=5,
-        help="Recommandé: 20% pour le test et 80% pour l'apprentissage"
+        help="Recommended: 20% for testing and 80% for training"
     )
     
     random_state = st.sidebar.number_input(
-        "Seed aléatoire (reproductibilité)",
+        "Random Seed (Reproducibility)",
         min_value=0,
         max_value=1000,
         value=42,
-        help="Pour garantir des résultats reproductibles"
+        help="To ensure reproducible results"
     )
     
     stratify = st.sidebar.checkbox(
         "Stratification",
         value=True,
-        help="Maintenir la proportion des classes dans les ensembles"
+        help="Maintain class proportions in sets"
     )
     
     return {
@@ -161,50 +161,50 @@ def render_classifier_params() -> tuple[str, dict]:
         Tuple of (classifier_name, parameters_dict)
     """
     st.sidebar.markdown("---")
-    st.sidebar.header("🤖 Paramètres du classifieur")
+    st.sidebar.header("🤖 Classifier Parameters")
     
     classifier_choice = st.sidebar.selectbox(
-        "Sélectionnez l'algorithme",
+        "Select Algorithm",
         SUPPORTED_CLASSIFIERS
     )
     
     classifier_params = {}
     
     if classifier_choice == "k-NN":
-        st.sidebar.markdown("**k-NN** : Classification par k plus proches voisins")
+        st.sidebar.markdown("**k-NN** : Classification by k-nearest neighbors")
         
         # Single k or range mode
         knn_mode = st.sidebar.radio(
-            "Mode d'évaluation",
-            ["Un seul k", "Évaluer k de 1 à 10"],
-            help="Évaluer k de 1 à 10 pour trouver la meilleure valeur"
+            "Evaluation Mode",
+            ["Single k", "Evaluate k from 1 to 10"],
+            help="Evaluate k from 1 to 10 to find the best value"
         )
         
-        if knn_mode == "Un seul k":
-            classifier_params["k"] = st.sidebar.slider("k (nombre de voisins)", 1, 20, 5)
+        if knn_mode == "Single k" or knn_mode == "Un seul k":
+            classifier_params["k"] = st.sidebar.slider("k (number of neighbors)", 1, 20, 5)
             classifier_params["evaluate_range"] = False
         else:
             classifier_params["k_range"] = list(KNN_K_RANGE)
             classifier_params["evaluate_range"] = True
-            st.sidebar.info("k sera évalué de 1 à 10")
+            st.sidebar.info("k will be evaluated from 1 to 10")
         
         classifier_params["metric"] = st.sidebar.selectbox(
-            "Métrique de distance",
+            "Distance Metric",
             ("euclidean", "manhattan", "minkowski")
         )
         classifier_params["weights"] = st.sidebar.selectbox(
-            "Pondération",
+            "Weighting",
             ("uniform", "distance"),
-            help="'uniform': tous les voisins égaux, 'distance': pondéré par l'inverse de la distance"
+            help="'uniform': all neighbors equal, 'distance': weighted by inverse of distance"
         )
         
     elif classifier_choice == "Naive Bayes":
-        st.sidebar.markdown("**Naive Bayes** : Classifieur probabiliste bayésien")
+        st.sidebar.markdown("**Naive Bayes** : Probabilistic Bayesian classifier")
         
         classifier_params["type"] = st.sidebar.selectbox(
-            "Type de Naive Bayes",
+            "Naive Bayes Type",
             ("gaussian", "multinomial", "bernoulli"),
-            help="Gaussian: pour features continues, Multinomial: pour comptages, Bernoulli: pour binaires"
+            help="Gaussian: for continuous features, Multinomial: for counts, Bernoulli: for binary"
         )
         
         if classifier_params["type"] == "gaussian":
@@ -214,11 +214,11 @@ def render_classifier_params() -> tuple[str, dict]:
                 max_value=1e-6,
                 value=1e-9,
                 format="%.1e",
-                help="Portion de la plus grande variance ajoutée pour la stabilité"
+                help="Portion of the largest variance added for stability"
             )
         else:
             classifier_params["alpha"] = st.sidebar.slider(
-                "alpha (lissage Laplace)",
+                "alpha (Laplace smoothing)",
                 min_value=0.0,
                 max_value=2.0,
                 value=1.0,
@@ -226,17 +226,17 @@ def render_classifier_params() -> tuple[str, dict]:
             )
         
     elif classifier_choice == "C4.5":
-        st.sidebar.markdown("**C4.5** : Arbre de décision (gain d'information)")
+        st.sidebar.markdown("**C4.5** : Decision Tree (Information Gain)")
         
         classifier_params["criterion"] = st.sidebar.selectbox(
-            "Critère de division",
+            "Split Criterion",
             ("entropy", "gini"),
-            help="'entropy' correspond au gain d'information (C4.5), 'gini' est utilisé par CART"
+            help="'entropy' corresponds to information gain (C4.5), 'gini' is used by CART"
         )
         
-        max_depth_enabled = st.sidebar.checkbox("Limiter la profondeur", value=False)
+        max_depth_enabled = st.sidebar.checkbox("Limit Depth", value=False)
         if max_depth_enabled:
-            classifier_params["max_depth"] = st.sidebar.slider("Profondeur maximale", 1, 20, 5)
+            classifier_params["max_depth"] = st.sidebar.slider("Max Depth", 1, 20, 5)
         else:
             classifier_params["max_depth"] = None
         
@@ -245,7 +245,7 @@ def render_classifier_params() -> tuple[str, dict]:
             min_value=2,
             max_value=20,
             value=2,
-            help="Nombre minimum d'échantillons pour diviser un nœud"
+            help="Minimum samples to split a node"
         )
         
         classifier_params["min_samples_leaf"] = st.sidebar.slider(
@@ -253,53 +253,53 @@ def render_classifier_params() -> tuple[str, dict]:
             min_value=1,
             max_value=10,
             value=1,
-            help="Nombre minimum d'échantillons dans une feuille"
+            help="Minimum samples in a leaf"
         )
         
     elif classifier_choice == "SVM":
-        st.sidebar.markdown("**SVM** : Machine à vecteurs de support")
+        st.sidebar.markdown("**SVM** : Support Vector Machine")
         
         classifier_params["kernel"] = st.sidebar.selectbox(
-            "Type de noyau (kernel)",
+            "Kernel Type",
             ("rbf", "linear", "poly", "sigmoid"),
-            help="RBF est le plus utilisé pour les données non-linéaires"
+            help="RBF is widely used for non-linear data"
         )
         
         classifier_params["C"] = st.sidebar.slider(
-            "C (régularisation)",
+            "C (regularization)",
             min_value=0.01,
             max_value=100.0,
             value=1.0,
-            help="Plus C est grand, moins de tolérance aux erreurs"
+            help="Larger C means less tolerance for errors"
         )
         
         if classifier_params["kernel"] == "rbf":
             gamma_option = st.sidebar.selectbox(
                 "gamma",
-                ("scale", "auto", "manuel"),
-                help="Coefficient du noyau RBF"
+                ("scale", "auto", "manual"),
+                help="RBF kernel coefficient"
             )
-            if gamma_option == "manuel":
-                classifier_params["gamma"] = st.sidebar.slider("Valeur de gamma", 0.001, 10.0, 1.0)
+            if gamma_option == "manual" or gamma_option == "manuel":
+                classifier_params["gamma"] = st.sidebar.slider("Gamma Value", 0.001, 10.0, 1.0)
             else:
                 classifier_params["gamma"] = gamma_option
         
         if classifier_params["kernel"] == "poly":
-            classifier_params["degree"] = st.sidebar.slider("Degré polynomial", 2, 5, 3)
+            classifier_params["degree"] = st.sidebar.slider("Polynomial Degree", 2, 5, 3)
         
         classifier_params["normalize"] = st.sidebar.checkbox(
-            "Normaliser les features",
+            "Normalize Features",
             value=True,
-            help="Recommandé pour SVM"
+            help="Recommended for SVM"
         )
     
     # Action buttons
     st.sidebar.markdown("---")
     col1, col2 = st.sidebar.columns(2)
     with col1:
-        run_button = st.button("▶️ Classifier", use_container_width=True, key="btn_classify")
+        run_button = st.button("▶️ Classify", use_container_width=True, key="btn_classify")
     with col2:
-        compare_button = st.button("Comparer tous", use_container_width=True, key="btn_compare_all")
+        compare_button = st.button("Compare All", use_container_width=True, key="btn_compare_all")
     
     return classifier_choice, classifier_params, run_button, compare_button
 
@@ -307,16 +307,16 @@ def render_classifier_params() -> tuple[str, dict]:
 def render_classification_footer():
     """Render classification help in sidebar footer."""
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### Aide Classification")
+    st.sidebar.markdown("### Classification Help")
     st.sidebar.markdown("""
-**Métriques :**
-- **Précision** : TP / (TP + FP)
-- **Rappel** : TP / (TP + FN)
-- **F-mesure** : 2 × (P × R) / (P + R)
+**Metrics :**
+- **Accuracy** : TP / (TP + FP)
+- **Recall** : TP / (TP + FN)
+- **F-measure** : 2 × (P × R) / (P + R)
 
-**Matrice de confusion:**
-- **TP** : Vrais positifs
-- **TN** : Vrais négatifs
-- **FP** : Faux positifs
-- **FN** : Faux négatifs
+**Confusion Matrix:**
+- **TP** : True Positives
+- **TN** : True Negatives
+- **FP** : False Positives
+- **FN** : False Negatives
 """)

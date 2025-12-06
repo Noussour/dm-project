@@ -31,14 +31,14 @@ def load_predefined_dataset(dataset_name: str) -> tuple[pd.DataFrame | None, str
         Tuple of (DataFrame, filename) or (None, None) if loading fails
     """
     if dataset_name not in PREDEFINED_DATASETS:
-        st.error(f"Dataset inconnu: {dataset_name}")
+        st.error(f"Unknown dataset: {dataset_name}")
         return None, None
     
     dataset_info = PREDEFINED_DATASETS[dataset_name]
     filepath = os.path.join(DATASETS_DIR, dataset_info["filename"])
     
     if not os.path.exists(filepath):
-        st.error(f"Fichier introuvable: {dataset_info['filename']}")
+        st.error(f"File not found: {dataset_info['filename']}")
         return None, None
     
     try:
@@ -59,7 +59,7 @@ def load_predefined_dataset(dataset_name: str) -> tuple[pd.DataFrame | None, str
         
         return df, dataset_info["filename"]
     except Exception as e:
-        st.error(f"Erreur lors du chargement du dataset: {e}")
+        st.error(f"Error loading dataset: {e}")
         return None, None
 
 
@@ -95,14 +95,14 @@ def validate_algorithm_compatibility(df: pd.DataFrame, selected_features: list,
     n_samples = len(df)
     if n_samples < constraints.get("min_samples", 1):
         errors.append(
-            f"Nombre d'échantillons insuffisant: {n_samples} < {constraints['min_samples']} requis pour {algo_name}"
+            f"Insufficient samples: {n_samples} < {constraints['min_samples']} required for {algo_name}"
         )
     
     # Check minimum features
     n_features = len(selected_features) if selected_features else X.shape[1]
     if n_features < constraints.get("min_features", 1):
         errors.append(
-            f"Nombre de features insuffisant: {n_features} < {constraints['min_features']} requis pour {algo_name}"
+            f"Insufficient features: {n_features} < {constraints['min_features']} required for {algo_name}"
         )
     
     # Check for missing values
@@ -110,18 +110,18 @@ def validate_algorithm_compatibility(df: pd.DataFrame, selected_features: list,
         missing_count = X.isnull().sum().sum()
         if missing_count > 0:
             errors.append(
-                f"Le dataset contient {missing_count} valeur(s) manquante(s). "
-                f"{algo_name} nécessite des données complètes. "
-                "Utilisez le prétraitement pour gérer les valeurs manquantes."
+                f"Dataset contains {missing_count} missing value(s). "
+                f"{algo_name} requires complete data. "
+                "Use preprocessing to handle missing values."
             )
     
     # Check for non-negative values (Multinomial Naive Bayes)
     if constraints.get("requires_non_negative", False):
         if (X < 0).any().any():
             warnings.append(
-                f"Certaines valeurs sont négatives. Le Naive Bayes Multinomial "
-                "ne fonctionne qu'avec des valeurs non-négatives. "
-                "Utilisez le type Gaussian ou normalisez vos données."
+                f"Some values are negative. Multinomial Naive Bayes "
+                "only works with non-negative values. "
+                "Use Gaussian type or normalize your data."
             )
     
     # Check minimum classes for classification
@@ -130,7 +130,7 @@ def validate_algorithm_compatibility(df: pd.DataFrame, selected_features: list,
             n_classes = df[target_col].nunique()
             if n_classes < constraints["min_classes"]:
                 errors.append(
-                    f"Nombre de classes insuffisant: {n_classes} < {constraints['min_classes']} requis pour {algo_name}"
+                    f"Insufficient classes: {n_classes} < {constraints['min_classes']} required for {algo_name}"
                 )
             
             # Check minimum samples per class for stratification
@@ -138,8 +138,8 @@ def validate_algorithm_compatibility(df: pd.DataFrame, selected_features: list,
             min_class_samples = class_counts.min()
             if min_class_samples < 2:
                 warnings.append(
-                    f"La classe la moins représentée n'a que {min_class_samples} échantillon(s). "
-                    "La stratification sera désactivée."
+                    f"The least represented class has only {min_class_samples} sample(s). "
+                    "Stratification will be disabled."
                 )
     
     # Special validation for n_clusters parameter
@@ -147,7 +147,7 @@ def validate_algorithm_compatibility(df: pd.DataFrame, selected_features: list,
         max_clusters = n_samples - 1
         if max_clusters < 2:
             errors.append(
-                f"Trop peu d'échantillons pour le clustering: minimum 3 échantillons nécessaires."
+                f"Too few samples for clustering: at least 3 samples required."
             )
     
     return len(errors) == 0, errors + warnings
@@ -181,15 +181,15 @@ def validate_visualization_compatibility(df: pd.DataFrame, selected_features: li
         if n_features < constraints["min_features"]:
             return False, (
                 f"{constraints['description']}. "
-                f"Vous n'avez que {n_features} feature(s) sélectionnée(s)."
+                f"You have only selected {n_features} feature(s)."
             )
     
     # Check maximum samples (for dendrogram)
     if "max_samples" in constraints:
         if n_samples > constraints["max_samples"]:
             return False, (
-                f"Trop d'échantillons pour {viz_type}: {n_samples} > {constraints['max_samples']} max. "
-                "Utilisez un sous-échantillonnage ou une autre visualisation."
+                f"Too many samples for {viz_type}: {n_samples} > {constraints['max_samples']} max. "
+                "Use subsampling or another visualization."
             )
     
     # Check algorithm compatibility
@@ -197,7 +197,7 @@ def validate_visualization_compatibility(df: pd.DataFrame, selected_features: li
         if algo_name not in constraints["algorithms"]:
             return False, (
                 f"{constraints['description']}. "
-                f"L'algorithme actuel est {algo_name}."
+                f"Current algorithm is {algo_name}."
             )
     
     return True, ""
@@ -219,22 +219,22 @@ def validate_clustering_params(algo_name: str, params: dict, n_samples: int) -> 
         n_clusters = params.get("n_clusters", 2)
         if n_clusters >= n_samples:
             return False, (
-                f"Le nombre de clusters ({n_clusters}) doit être inférieur "
-                f"au nombre d'échantillons ({n_samples})."
+                f"Number of clusters ({n_clusters}) must be less than "
+                f"number of samples ({n_samples})."
             )
         if n_clusters < 2:
-            return False, "Le nombre de clusters doit être au moins 2."
+            return False, "Number of clusters must be at least 2."
     
     if algo_name == "DBSCAN":
         min_samples = params.get("min_samples", 5)
         if min_samples >= n_samples:
             return False, (
-                f"Le paramètre min_samples ({min_samples}) doit être inférieur "
-                f"au nombre d'échantillons ({n_samples})."
+                f"min_samples parameter ({min_samples}) must be less than "
+                f"number of samples ({n_samples})."
             )
         eps = params.get("eps", 0.5)
         if eps <= 0:
-            return False, "Le paramètre eps doit être positif."
+            return False, "eps parameter must be positive."
     
     return True, ""
 
@@ -265,7 +265,7 @@ def read_uploaded_file(uploaded_file) -> pd.DataFrame | None:
         elif name.endswith((".xls", ".xlsx")):
             df = pd.read_excel(uploaded_file, na_values=missing_values, keep_default_na=True)
         else:
-            st.error("Format non supporté. Uploadez un .csv ou .xlsx/.xls.")
+            st.error("Unsupported format. Upload a .csv or .xlsx/.xls.")
             return None
         
         # Also convert empty strings to NaN for CSV files
@@ -274,7 +274,7 @@ def read_uploaded_file(uploaded_file) -> pd.DataFrame | None:
         
         return df
     except Exception as e:
-        st.error(f"Erreur lors de la lecture du fichier: {e}")
+        st.error(f"Error reading file: {e}")
         return None
 
 
@@ -290,12 +290,12 @@ def validate_dataframe(df: pd.DataFrame) -> tuple[bool, str]:
         Tuple of (is_valid, error_message)
     """
     if df is None:
-        return False, "Veuillez uploader un dataset (CSV ou Excel) via la sidebar."
+        return False, "Please upload a dataset (CSV or Excel) via the sidebar."
     
     # Check for numeric columns (at least 1 numeric column required)
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     if len(numeric_cols) < 1:
-        return False, "Le dataset doit contenir au moins 1 feature numérique pour le clustering."
+        return False, "Dataset must contain at least 1 numeric feature for clustering."
     
     return True, ""
 
@@ -330,14 +330,14 @@ def compute_five_number_summary(df: pd.DataFrame) -> pd.DataFrame | None:
     
     five_num = pd.DataFrame(
         index=num_cols,
-        columns=["Minimum", "Q1", "Médiane", "Q3", "Maximum"]
+        columns=["Minimum", "Q1", "Median", "Q3", "Maximum"]
     )
     
     for col in num_cols:
         try:
             five_num.loc[col, "Minimum"] = df[col].min()
             five_num.loc[col, "Q1"] = df[col].quantile(0.25)
-            five_num.loc[col, "Médiane"] = df[col].median()
+            five_num.loc[col, "Median"] = df[col].median()
             five_num.loc[col, "Q3"] = df[col].quantile(0.75)
             five_num.loc[col, "Maximum"] = df[col].max()
         except Exception:

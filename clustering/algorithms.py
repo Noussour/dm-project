@@ -81,7 +81,7 @@ def run_clustering(algo_name: str, params: dict, X: pd.DataFrame) -> dict:
         result["division_history"] = algo_result.get("division_history")
         
     else:
-        raise ValueError(f"Algorithme non supporté: {algo_name}")
+        raise ValueError(f"Unsupported algorithm: {algo_name}")
     
     # Compute metrics
     result["metrics"] = compute_metrics(X_np, result["labels"])
