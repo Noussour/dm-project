@@ -8,7 +8,7 @@ Provides supervised learning algorithms:
 - Support Vector Machine (SVM)
 """
 
-from .algorithms import run_classification, ClassificationResult
+from .algorithms import run_classification, ClassificationResult, compare_classifiers
 from .knn import run_knn, evaluate_knn_k_range
 from .naive_bayes import run_naive_bayes
 from .decision_tree import run_c45
