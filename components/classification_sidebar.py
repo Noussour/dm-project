@@ -30,15 +30,54 @@ def render_target_selection(df: pd.DataFrame) -> str | None:
     target_col = st.sidebar.selectbox(
         "Variable cible (classe)",
         all_cols,
-        help="Sélectionnez la colonne contenant les étiquettes de classe"
+        help="Sélectionnez la colonne contenant les étiquettes de classe (valeurs discrètes)"
     )
     
-    # Show class distribution
+    # Validate target column
     if target_col:
+        target_values = df[target_col].dropna()
+        n_unique = target_values.nunique()
+        
+        # Check if target is continuous (too many unique values relative to dataset size)
+        is_likely_continuous = False
+        if np.issubdtype(df[target_col].dtype, np.floating):
+            # Float column - check if values look continuous
+            if n_unique > 20 or n_unique > len(df) * 0.5:
+                is_likely_continuous = True
+            # Also check if values have decimals
+            elif target_values.apply(lambda x: x != int(x) if pd.notna(x) else False).any():
+                is_likely_continuous = True
+        
+        if is_likely_continuous:
+            st.sidebar.error(
+                f"⚠️ La colonne '{target_col}' semble contenir des valeurs continues "
+                f"({n_unique} valeurs uniques). La classification nécessite des classes discrètes. "
+                "Choisissez une autre colonne ou discrétisez vos données."
+            )
+            return None
+        
+        # Warning for too many classes
+        if n_unique > 50:
+            st.sidebar.warning(
+                f"⚠️ La colonne '{target_col}' contient {n_unique} classes différentes. "
+                "Un grand nombre de classes peut affecter les performances."
+            )
+        
+        # Show class distribution
         with st.sidebar.expander("Distribution des classes"):
             class_counts = df[target_col].value_counts()
             st.bar_chart(class_counts)
             st.write(f"Nombre de classes: {len(class_counts)}")
+            
+            # Warn about imbalanced classes
+            if len(class_counts) >= 2:
+                max_count = class_counts.max()
+                min_count = class_counts.min()
+                if max_count > min_count * 10:
+                    st.warning(
+                        f"⚠️ Classes déséquilibrées: la plus grande classe ({max_count}) "
+                        f"est {max_count/min_count:.1f}x plus grande que la plus petite ({min_count})."
+                    )
     
     return target_col
 

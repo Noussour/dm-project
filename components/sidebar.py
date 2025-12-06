@@ -10,6 +10,10 @@ from utils.data_loader import (
     read_uploaded_file,
     compute_five_number_summary,
     filter_dataframe,
+    get_predefined_datasets,
+    load_predefined_dataset,
+    validate_algorithm_compatibility,
+    validate_clustering_params,
 )
 from utils.preprocessing import PreprocessingPipeline
 from components.preprocessing_ui import (
@@ -18,7 +22,7 @@ from components.preprocessing_ui import (
     render_normalization_section,
     run_preprocessing_pipeline,
 )
-from config.constants import SUPPORTED_ALGORITHMS
+from config.constants import SUPPORTED_ALGORITHMS, PREDEFINED_DATASETS
 
 
 def render_data_preview(df: pd.DataFrame):
@@ -55,46 +59,128 @@ def render_data_preview(df: pd.DataFrame):
 
 def render_file_upload() -> tuple[pd.DataFrame | None, str | None]:
     """
-    Render file upload widget and return loaded DataFrame.
-    Users must upload their own CSV or Excel files.
-    When a new dataset is uploaded, reset all preprocessing and clustering results.
+    Render file upload widget with option to select predefined datasets.
+    Users can either upload their own CSV/Excel files or choose from predefined datasets.
+    When a new dataset is loaded, reset all preprocessing and clustering results.
     
     Returns:
         Tuple of (DataFrame, filename) or (None, None)
     """
     st.sidebar.header("📂 Chargement des données")
-    st.sidebar.markdown("_Les données doivent être fournies par l'utilisateur via upload de fichier_")
     
-    uploaded = st.sidebar.file_uploader(
-        "📥 Uploader un fichier CSV ou Excel (xlsx/xls)",
-        accept_multiple_files=False
+    # Data source selection
+    data_source = st.sidebar.radio(
+        "Source des données",
+        ["📁 Dataset prédéfini", "📤 Upload fichier"],
+        help="Choisissez un dataset prédéfini ou uploadez votre propre fichier"
     )
     
     df = None
     dataset_name = None
     
-    if uploaded is not None:
-        # Check if this is a new dataset (different from what was loaded before)
-        current_dataset_key = st.session_state.get("current_uploaded_file")
-        if current_dataset_key != uploaded.name:
-            # New dataset uploaded - reset ALL session data
-            st.session_state["current_uploaded_file"] = uploaded.name
-            st.session_state["preprocessed_datasets"] = {}
-            st.session_state["results"] = {}
-            st.session_state["classification_results"] = {}
-            st.session_state["selected_features_for_clustering"] = []
-            st.session_state["selected_dataset_key"] = None
-            st.session_state["active_section"] = "Prétraitement"
-            st.toast("Nouveau dataset détecté — toutes les données de session ont été réinitialisées.")
+    if data_source == "📁 Dataset prédéfini":
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### Datasets disponibles")
         
-        df = read_uploaded_file(uploaded)
-        if df is not None:
-            dataset_name = uploaded.name
-            st.sidebar.success(
-                f"Fichier '{uploaded.name}' chargé ({df.shape[0]} lignes, {df.shape[1]} colonnes)"
-            )
-        else:
-            st.sidebar.warning("Impossible de lire le fichier uploadé.")
+        # Get predefined datasets
+        predefined_datasets = get_predefined_datasets()
+        dataset_options = list(predefined_datasets.keys())
+        
+        # Dataset selection
+        selected_dataset = st.sidebar.selectbox(
+            "Sélectionnez un dataset",
+            dataset_options,
+            format_func=lambda x: f"{x} ({predefined_datasets[x]['num_instances']} inst.)"
+        )
+        
+        if selected_dataset:
+            dataset_info = predefined_datasets[selected_dataset]
+            
+            # Show dataset info
+            with st.sidebar.expander("ℹ️ Informations sur le dataset", expanded=False):
+                st.markdown(f"**Description**: {dataset_info['description']}")
+                st.markdown(f"**Instances**: {dataset_info['num_instances']}")
+                st.markdown(f"**Features**: {dataset_info['num_features']}")
+                st.markdown(f"**Classes**: {dataset_info['num_classes']}")
+                
+                if dataset_info.get('has_missing_values'):
+                    st.warning("⚠️ Ce dataset contient des valeurs manquantes")
+                else:
+                    st.success("✅ Pas de valeurs manquantes")
+                
+                if dataset_info.get('target_column'):
+                    st.info(f"**Cible recommandée**: `{dataset_info['target_column']}`")
+                
+                recommended = ", ".join(dataset_info.get('recommended_for', []))
+                st.markdown(f"**Recommandé pour**: {recommended}")
+            
+            # Load button
+            if st.sidebar.button("📥 Charger ce dataset", use_container_width=True):
+                # Check if this is a different dataset
+                current_dataset_key = st.session_state.get("current_uploaded_file")
+                new_dataset_key = f"predefined_{selected_dataset}"
+                
+                if current_dataset_key != new_dataset_key:
+                    # Reset session state for new dataset
+                    st.session_state["current_uploaded_file"] = new_dataset_key
+                    st.session_state["preprocessed_datasets"] = {}
+                    st.session_state["results"] = {}
+                    st.session_state["classification_results"] = {}
+                    st.session_state["selected_features_for_clustering"] = []
+                    st.session_state["selected_dataset_key"] = None
+                    st.session_state["active_section"] = "Prétraitement"
+                    st.toast(f"Dataset '{selected_dataset}' chargé — session réinitialisée.")
+                
+                df, dataset_name = load_predefined_dataset(selected_dataset)
+                if df is not None:
+                    st.session_state["loaded_predefined_df"] = df
+                    st.session_state["loaded_predefined_name"] = dataset_name
+                    st.sidebar.success(
+                        f"✅ '{selected_dataset}' chargé ({df.shape[0]} lignes, {df.shape[1]} colonnes)"
+                    )
+            
+            # Check if we already have a loaded predefined dataset
+            if "loaded_predefined_df" in st.session_state:
+                current_key = st.session_state.get("current_uploaded_file", "")
+                if current_key == f"predefined_{selected_dataset}":
+                    df = st.session_state["loaded_predefined_df"]
+                    dataset_name = st.session_state["loaded_predefined_name"]
+    
+    else:  # Upload file
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("_Formats supportés: CSV, Excel (xlsx/xls)_")
+        
+        uploaded = st.sidebar.file_uploader(
+            "📥 Uploader un fichier",
+            accept_multiple_files=False,
+            type=["csv", "xlsx", "xls"]
+        )
+        
+        if uploaded is not None:
+            # Check if this is a new dataset
+            current_dataset_key = st.session_state.get("current_uploaded_file")
+            if current_dataset_key != uploaded.name:
+                # New dataset uploaded - reset ALL session data
+                st.session_state["current_uploaded_file"] = uploaded.name
+                st.session_state["preprocessed_datasets"] = {}
+                st.session_state["results"] = {}
+                st.session_state["classification_results"] = {}
+                st.session_state["selected_features_for_clustering"] = []
+                st.session_state["selected_dataset_key"] = None
+                st.session_state["active_section"] = "Prétraitement"
+                # Clear predefined dataset if any
+                st.session_state.pop("loaded_predefined_df", None)
+                st.session_state.pop("loaded_predefined_name", None)
+                st.toast("Nouveau dataset uploadé — session réinitialisée.")
+            
+            df = read_uploaded_file(uploaded)
+            if df is not None:
+                dataset_name = uploaded.name
+                st.sidebar.success(
+                    f"✅ '{uploaded.name}' chargé ({df.shape[0]} lignes, {df.shape[1]} colonnes)"
+                )
+            else:
+                st.sidebar.warning("Impossible de lire le fichier uploadé.")
     
     # Show preview if data loaded
     if df is not None:
@@ -282,6 +368,17 @@ def render_algorithm_params() -> tuple[str, dict, bool, bool, str]:
         st.sidebar.markdown("**DIANA** : Divisive Analysis (approche descendante)")
         algo_params["n_clusters"] = st.sidebar.slider("n_clusters", 2, 10, 2)
         algo_params["metric"] = st.sidebar.selectbox("Métrique de distance", ("euclidean", "manhattan"))
+    
+    # Display algorithm constraints info
+    from config.constants import ALGORITHM_CONSTRAINTS
+    if algo_choice in ALGORITHM_CONSTRAINTS:
+        constraints = ALGORITHM_CONSTRAINTS[algo_choice]
+        with st.sidebar.expander("ℹ️ Contraintes de l'algorithme", expanded=False):
+            st.markdown(f"**Min échantillons**: {constraints.get('min_samples', 1)}")
+            st.markdown(f"**Min features**: {constraints.get('min_features', 1)}")
+            if constraints.get('requires_no_missing'):
+                st.markdown("⚠️ **Requiert**: Pas de valeurs manquantes")
+            st.markdown(f"_{constraints.get('description', '')}_")
     
     # Render action buttons below algorithm parameters
     st.sidebar.markdown("---")

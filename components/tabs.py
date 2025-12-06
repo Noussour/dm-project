@@ -62,7 +62,16 @@ def render_visualization_tab(df: pd.DataFrame, selected_features: list[str]):
         df: Full DataFrame
         selected_features: List of selected feature names
     """
+    from utils.data_loader import validate_visualization_compatibility
+    
     st.subheader("Visualisation interactive")
+    
+    # Validate minimum features for visualization
+    if len(selected_features) < 2:
+        st.error("❌ La visualisation nécessite au moins 2 features sélectionnées.")
+        st.info("💡 Retournez au prétraitement et sélectionnez au moins 2 features numériques.")
+        return
+    
     st.markdown(
         "Choisissez les axes X / Y / (optionnel Z) parmi les features numériques sélectionnées."
     )
@@ -76,22 +85,36 @@ def render_visualization_tab(df: pd.DataFrame, selected_features: list[str]):
         y_axis = st.selectbox("Axe Y", selected_features, index=1 if len(selected_features) > 1 else 0)
     with col3:
         # Z axis with option to disable 3D (None = 2D only)
-        z_options = [None] + selected_features
-        z_default_index = 0  # Default to "Désactiver 3D"
-        z_axis = st.selectbox(
-            "Axe Z (3D)",
-            z_options,
-            index=z_default_index,
-            format_func=lambda x: "Désactiver 3D" if x is None else x
-        )
+        if len(selected_features) >= 3:
+            z_options = [None] + selected_features
+            z_default_index = 0  # Default to "Désactiver 3D"
+            z_axis = st.selectbox(
+                "Axe Z (3D)",
+                z_options,
+                index=z_default_index,
+                format_func=lambda x: "Désactiver 3D" if x is None else x
+            )
+        else:
+            z_axis = None
+            st.info("📊 3D désactivé (nécessite 3+ features)")
     
     z_option = z_axis is not None
+    
+    # Validate 3D visualization if selected
+    if z_option:
+        is_valid, error_msg = validate_visualization_compatibility(
+            df, selected_features, "", "3D_scatter"
+        )
+        if not is_valid:
+            st.warning(f"⚠️ {error_msg}")
+            z_option = False
+            z_axis = None
     
     # Check for stored results
     runs = get_results_list()
     
     if len(runs) == 0:
-        st.info("Aucune exécution de clustering stockée. Lancez un algorithme via la sidebar.")
+        st.info("ℹ️ Aucune exécution de clustering stockée. Lancez un algorithme via la sidebar.")
         return
     
     # Filter runs compatible with current dataset
@@ -296,12 +319,15 @@ def render_charts_tab(df: pd.DataFrame, selected_features: list[str]):
         df: Full DataFrame
         selected_features: List of selected feature names
     """
+    from utils.data_loader import validate_visualization_compatibility
+    from config.constants import VISUALIZATION_CONSTRAINTS
+    
     st.subheader("Graphiques complémentaires")
     
     runs = get_results_list()
     
     if len(runs) == 0:
-        st.info("Exécutez des algorithmes pour générer ces graphiques.")
+        st.info("ℹ️ Exécutez des algorithmes pour générer ces graphiques.")
         return
     
     # Filter runs compatible with current dataset
@@ -309,7 +335,7 @@ def render_charts_tab(df: pd.DataFrame, selected_features: list[str]):
     
     if len(compatible_runs) == 0:
         st.warning(
-            "Aucun run compatible avec le dataset actuel. "
+            "⚠️ Aucun run compatible avec le dataset actuel. "
             "Les runs précédents utilisaient des features différentes. "
             "Exécutez un nouveau clustering sur ce dataset."
         )
@@ -330,11 +356,30 @@ def render_charts_tab(df: pd.DataFrame, selected_features: list[str]):
     # Validate features exist in current dataframe
     missing_features = [f for f in features_used if f not in df.columns]
     if missing_features:
-        st.error(f"Features manquantes dans le dataset actuel: {missing_features}")
+        st.error(f"❌ Features manquantes dans le dataset actuel: {missing_features}")
         return
     
     X = df[features_used]
     X_np = X.to_numpy()
+    
+    # Show algorithm-specific chart availability info
+    st.markdown("---")
+    st.markdown(f"**Algorithme sélectionné**: `{algo}`")
+    
+    # Display which visualizations are available for this algorithm
+    available_viz = []
+    if algo in ["KMeans", "K-Medoids"]:
+        available_viz = ["Elbow Plot", "Silhouette vs K", "Distribution des clusters"]
+    elif algo == "DBSCAN":
+        available_viz = ["k-Distance Graph", "Distribution des clusters"]
+    elif algo in ["AGNES", "DIANA"]:
+        available_viz = ["Dendrogramme", "Silhouette vs K", "Distribution des clusters"]
+        # Check dendrogram size limit
+        if len(df) > VISUALIZATION_CONSTRAINTS["dendrogram"]["max_samples"]:
+            st.warning(f"⚠️ Le dendrogramme est désactivé car le dataset contient plus de "
+                      f"{VISUALIZATION_CONSTRAINTS['dendrogram']['max_samples']} échantillons ({len(df)}).")
+    
+    st.info(f"📊 Visualisations disponibles pour {algo}: {', '.join(available_viz)}")
 
     # Dispatch charts based on algorithm
     if algo == "KMeans":
@@ -344,9 +389,9 @@ def render_charts_tab(df: pd.DataFrame, selected_features: list[str]):
     elif algo == "DBSCAN":
         _render_dbscan_charts(X_np, res, sel_run)
     elif algo == "AGNES":
-        _render_agnes_charts(X_np, res, sel_run)
+        _render_agnes_charts(X_np, res, sel_run, len(df))
     elif algo == "DIANA":
-        _render_diana_charts(X_np, res, sel_run)
+        _render_diana_charts(X_np, res, sel_run, len(df))
     else:
         # Generic chart for unknown algorithms
         _render_generic_charts(X_np, res, sel_run)
@@ -355,21 +400,31 @@ def render_charts_tab(df: pd.DataFrame, selected_features: list[str]):
     
 
 
-def _render_diana_charts(X: np.ndarray, res: dict, run_name: str):
+def _render_diana_charts(X: np.ndarray, res: dict, run_name: str, n_samples: int = None):
     """Render DIANA specific charts: Dendrogram + Silhouette + Histogram"""
+    from config.constants import VISUALIZATION_CONSTRAINTS
+    
+    n_samples = n_samples or X.shape[0]
+    max_dendrogram_samples = VISUALIZATION_CONSTRAINTS["dendrogram"]["max_samples"]
+    
     tabs = st.tabs(["Dendrogramme", "Silhouette vs K", "Distribution des clusters"])
     
     # Dendrogram
     with tabs[0]:
-        st.markdown("**Dendrogramme (DIANA - Divisif)** : affichage hiérarchique du clustering.")
-        n_clusters = int(res.get("params", {}).get("n_clusters", 2))
-        k_cut = st.slider("Couper pour obtenir combien de clusters ?", 2, min(10, X.shape[0]), n_clusters, key=f"diana_dendrogram_{run_name}")
-        try:
-            Z = compute_linkage_matrix(X, method="complete")
-            fig = create_dendrogram(Z, k_cut, figsize=(12, 5))
-            st.pyplot(fig)
-        except Exception as e:
-            st.error(f"Impossible de calculer le dendrogramme: {e}")
+        if n_samples > max_dendrogram_samples:
+            st.warning(f"⚠️ Dendrogramme désactivé: le dataset ({n_samples} échantillons) "
+                      f"dépasse la limite de {max_dendrogram_samples} échantillons.")
+            st.info("💡 Utilisez un sous-échantillonnage ou la visualisation 2D/3D à la place.")
+        else:
+            st.markdown("**Dendrogramme (DIANA - Divisif)** : affichage hiérarchique du clustering.")
+            n_clusters = int(res.get("params", {}).get("n_clusters", 2))
+            k_cut = st.slider("Couper pour obtenir combien de clusters ?", 2, min(10, X.shape[0]), n_clusters, key=f"diana_dendrogram_{run_name}")
+            try:
+                Z = compute_linkage_matrix(X, method="complete")
+                fig = create_dendrogram(Z, k_cut, figsize=(12, 5))
+                st.pyplot(fig)
+            except Exception as e:
+                st.error(f"❌ Impossible de calculer le dendrogramme: {e}")
     
     # Silhouette plot
     with tabs[1]:
@@ -390,22 +445,32 @@ def _render_diana_charts(X: np.ndarray, res: dict, run_name: str):
         st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_agnes_charts(X: np.ndarray, res: dict, run_name: str):
+def _render_agnes_charts(X: np.ndarray, res: dict, run_name: str, n_samples: int = None):
     """Render AGNES specific charts: Dendrogram + Silhouette + Histogram"""
+    from config.constants import VISUALIZATION_CONSTRAINTS
+    
+    n_samples = n_samples or X.shape[0]
+    max_dendrogram_samples = VISUALIZATION_CONSTRAINTS["dendrogram"]["max_samples"]
+    
     tabs = st.tabs(["Dendrogramme", "Silhouette vs K", "Distribution des clusters"])
     
     # Dendrogram
     with tabs[0]:
-        st.markdown("**Dendrogramme (AGNES - Agglomératif)** : affichage hiérarchique du clustering.")
-        n_clusters = int(res.get("params", {}).get("n_clusters", 2))
-        linkage_method = res.get("params", {}).get("linkage", "ward")
-        k_cut = st.slider("Couper pour obtenir combien de clusters ?", 2, min(10, X.shape[0]), n_clusters, key=f"agnes_dendrogram_{run_name}")
-        try:
-            Z = compute_linkage_matrix(X, method=linkage_method)
-            fig = create_dendrogram(Z, k_cut, figsize=(12, 5))
-            st.pyplot(fig)
-        except Exception as e:
-            st.error(f"Impossible de calculer le dendrogramme: {e}")
+        if n_samples > max_dendrogram_samples:
+            st.warning(f"⚠️ Dendrogramme désactivé: le dataset ({n_samples} échantillons) "
+                      f"dépasse la limite de {max_dendrogram_samples} échantillons.")
+            st.info("💡 Utilisez un sous-échantillonnage ou la visualisation 2D/3D à la place.")
+        else:
+            st.markdown("**Dendrogramme (AGNES - Agglomératif)** : affichage hiérarchique du clustering.")
+            n_clusters = int(res.get("params", {}).get("n_clusters", 2))
+            linkage_method = res.get("params", {}).get("linkage", "ward")
+            k_cut = st.slider("Couper pour obtenir combien de clusters ?", 2, min(10, X.shape[0]), n_clusters, key=f"agnes_dendrogram_{run_name}")
+            try:
+                Z = compute_linkage_matrix(X, method=linkage_method)
+                fig = create_dendrogram(Z, k_cut, figsize=(12, 5))
+                st.pyplot(fig)
+            except Exception as e:
+                st.error(f"❌ Impossible de calculer le dendrogramme: {e}")
     
     # Silhouette plot
     with tabs[1]:

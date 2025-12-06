@@ -333,17 +333,65 @@ def render_classification_results_tab(df: pd.DataFrame, selected_features: list,
         classifier_params: Classifier parameters
     """
     from sklearn.model_selection import train_test_split
+    from sklearn.utils.multiclass import type_of_target
+    from utils.data_loader import validate_algorithm_compatibility
     
     # Validate target column exists
     if target_col not in df.columns:
-        st.error(f"La colonne cible '{target_col}' n'existe pas dans le dataset. Veuillez sélectionner une colonne valide.")
+        st.error(f"❌ La colonne cible '{target_col}' n'existe pas dans le dataset. Veuillez sélectionner une colonne valide.")
         return
     
     # Validate selected features exist
     missing_features = [f for f in selected_features if f not in df.columns]
     if missing_features:
-        st.error(f"Les features suivantes n'existent pas dans le dataset: {missing_features}")
+        st.error(f"❌ Les features suivantes n'existent pas dans le dataset: {missing_features}")
         return
+    
+    # Validate target is not continuous
+    y_check = df[target_col].dropna().values
+    target_type = type_of_target(y_check)
+    
+    if target_type == 'continuous' or target_type == 'continuous-multioutput':
+        st.error(
+            f"❌ La variable cible '{target_col}' contient des valeurs continues (type détecté: {target_type}). "
+            "La classification nécessite des classes discrètes (catégorielles). "
+            "\n\n**Solutions possibles:**"
+            "\n- Sélectionnez une autre colonne comme cible"
+            "\n- Discrétisez la colonne (ex: convertir en catégories)"
+            "\n- Utilisez un algorithme de régression au lieu de classification"
+        )
+        return
+    
+    # Validate algorithm compatibility
+    is_valid, validation_messages = validate_algorithm_compatibility(
+        df, selected_features, classifier_choice, target_col
+    )
+    
+    if not is_valid:
+        for msg in validation_messages:
+            st.error(f"❌ {msg}")
+        return
+    
+    # Show warnings
+    for msg in validation_messages:
+        st.warning(f"⚠️ {msg}")
+    
+    # Special validation for Naive Bayes with negative values
+    if classifier_choice == "Naive Bayes":
+        X_check = df[selected_features]
+        nb_type = classifier_params.get("type", "gaussian")
+        if nb_type == "multinomial" and (X_check < 0).any().any():
+            st.error("❌ Le Naive Bayes Multinomial ne peut pas être utilisé avec des valeurs négatives. "
+                    "Veuillez normaliser vos données (Min-Max) ou utiliser le type Gaussian.")
+            return
+        if nb_type == "bernoulli":
+            # Check if data looks binary
+            unique_values = set()
+            for col in selected_features:
+                unique_values.update(X_check[col].unique())
+            if not all(v in [0, 1] or pd.isna(v) for v in unique_values):
+                st.warning("⚠️ Le Naive Bayes Bernoulli est optimisé pour des données binaires (0/1). "
+                          "Vos données ne semblent pas être binaires.")
     
     # Prepare data
     X = df[selected_features].values
@@ -353,11 +401,19 @@ def render_classification_results_tab(df: pd.DataFrame, selected_features: list,
     unique_classes, class_counts = np.unique(y, return_counts=True)
     min_class_count = class_counts.min()
     
+    # Validate minimum samples per class for k-NN
+    if classifier_choice == "k-NN":
+        k_value = classifier_params.get("k", 5)
+        if not classifier_params.get("evaluate_range", False):
+            if min_class_count < k_value:
+                st.warning(f"⚠️ La classe la moins représentée n'a que {min_class_count} échantillons, "
+                          f"ce qui est inférieur à k={k_value}. Résultats potentiellement biaisés.")
+    
     # Determine if stratification is possible
     can_stratify = split_config["stratify"] and min_class_count >= 2
     
     if split_config["stratify"] and not can_stratify:
-        st.warning(f"Stratification désactivée: certaines classes ont moins de 2 échantillons (minimum: {min_class_count}).")
+        st.warning(f"⚠️ Stratification désactivée: certaines classes ont moins de 2 échantillons (minimum: {min_class_count}).")
     
     stratify_val = y if can_stratify else None
     
@@ -409,21 +465,53 @@ def render_all_classifiers_comparison(df: pd.DataFrame, selected_features: list,
         split_config: Train/test split configuration
     """
     from sklearn.model_selection import train_test_split
+    from sklearn.utils.multiclass import type_of_target
     from classification import compare_classifiers
+    from utils.data_loader import validate_algorithm_compatibility
+    
+    # Validate target column
+    if target_col not in df.columns:
+        st.error(f"❌ La colonne cible '{target_col}' n'existe pas dans le dataset.")
+        return
+    
+    # Validate target is not continuous
+    y_check = df[target_col].dropna().values
+    target_type = type_of_target(y_check)
+    
+    if target_type == 'continuous' or target_type == 'continuous-multioutput':
+        st.error(
+            f"❌ La variable cible '{target_col}' contient des valeurs continues (type: {target_type}). "
+            "La classification nécessite des classes discrètes. "
+            "Sélectionnez une colonne catégorielle comme cible."
+        )
+        return
+    
+    # Check for missing values
+    X_check = df[selected_features]
+    if X_check.isnull().any().any():
+        st.error("❌ Le dataset contient des valeurs manquantes dans les features sélectionnées. "
+                "Veuillez effectuer un prétraitement pour gérer les valeurs manquantes.")
+        return
     
     # Prepare data
     X = df[selected_features].values
     y = df[target_col].values
     
-    # Check class distribution for stratification
+    # Check number of classes
     unique_classes, class_counts = np.unique(y, return_counts=True)
+    n_classes = len(unique_classes)
+    
+    if n_classes < 2:
+        st.error("❌ La classification nécessite au moins 2 classes distinctes dans la variable cible.")
+        return
+    
     min_class_count = class_counts.min()
     
     # Determine if stratification is possible
     can_stratify = split_config["stratify"] and min_class_count >= 2
     
     if split_config["stratify"] and not can_stratify:
-        st.warning(f"Stratification désactivée: certaines classes ont moins de 2 échantillons (minimum: {min_class_count}).")
+        st.warning(f"⚠️ Stratification désactivée: certaines classes ont moins de 2 échantillons (minimum: {min_class_count}).")
     
     stratify_val = y if can_stratify else None
     

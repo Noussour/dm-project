@@ -100,11 +100,12 @@ def evaluate_knn_k_range(X_train: np.ndarray, y_train: np.ndarray,
         # Compute metrics
         metrics = compute_all_metrics(y_test, predictions)
         
-        # Store results
+        # Store results - use 'precision' which is always available
+        # (for multiclass it defaults to weighted average, for binary it's the standard precision)
         results["accuracy"].append(metrics["overall"]["accuracy"])
-        results["precision"].append(metrics["overall"]["precision_macro"])
-        results["recall"].append(metrics["overall"]["recall_macro"])
-        results["f1"].append(metrics["overall"]["f1_macro"])
+        results["precision"].append(metrics["overall"].get("precision", metrics["overall"].get("precision_macro", 0)))
+        results["recall"].append(metrics["overall"].get("recall", metrics["overall"].get("recall_macro", 0)))
+        results["f1"].append(metrics["overall"].get("f1", metrics["overall"].get("f1_macro", 0)))
         results["confusion_matrices"].append(metrics["confusion_matrix"])
         
         results["per_k_results"][k] = {

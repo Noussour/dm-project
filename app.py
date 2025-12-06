@@ -42,8 +42,14 @@ import streamlit as st
 
 # Local imports
 from config.settings import configure_page
-from config.constants import MAX_3D_POINTS
-from utils.data_loader import validate_dataframe, get_numeric_columns
+from config.constants import MAX_3D_POINTS, ALGORITHM_CONSTRAINTS
+from utils.data_loader import (
+    validate_dataframe, 
+    get_numeric_columns, 
+    filter_dataframe,
+    validate_algorithm_compatibility,
+    validate_clustering_params,
+)
 from clustering import run_clustering
 from components.sidebar import (
     render_file_upload,
@@ -72,7 +78,6 @@ from components.classification_tabs import (
     render_classification_results_tab,
     render_all_classifiers_comparison,
 )
-from utils.data_loader import filter_dataframe
 
 
 def init_session_state():
@@ -107,11 +112,38 @@ def execute_clustering(df, selected_features, algo_choice, algo_params, dataset_
     
     # Validate all features are numeric
     if not all(np.issubdtype(X[c].dtype, np.number) for c in X.columns):
-        st.error("Toutes les features sélectionnées doivent être numériques.")
+        st.error("❌ Toutes les features sélectionnées doivent être numériques.")
+        return
+    
+    # Validate algorithm compatibility with dataset
+    is_valid, validation_messages = validate_algorithm_compatibility(
+        df, selected_features, algo_choice
+    )
+    
+    if not is_valid:
+        for msg in validation_messages:
+            if "valeur(s) manquante(s)" in msg.lower():
+                st.error(f"❌ {msg}")
+            else:
+                st.error(f"❌ {msg}")
+        return
+    
+    # Show warnings if any
+    for msg in validation_messages:
+        if "valeur(s) manquante(s)" not in msg.lower():
+            st.warning(f"⚠️ {msg}")
+    
+    # Validate clustering parameters against data size
+    is_param_valid, param_error = validate_clustering_params(
+        algo_choice, algo_params, len(df)
+    )
+    
+    if not is_param_valid:
+        st.error(f"❌ {param_error}")
         return
     
     try:
-        st.info(f"Lancement de {algo_choice} ...")
+        st.info(f"🚀 Lancement de {algo_choice} ...")
         result = run_clustering(algo_choice, algo_params, X)
         
         # Create clean run identifier
@@ -292,9 +324,23 @@ def main():
                 df_processed = st.session_state["preprocessed_datasets"][keys[-1]]
                 selected_dataset_name = keys[-1]
 
-        if df_processed.isnull().values.any():
-            missing_count = df_processed.isnull().sum().sum()
-            st.warning(f"Le dataset contient **{missing_count}** valeur(s) manquante(s). Retournez au prétraitement pour nettoyer le dataset.")
+        # Check for missing values and block execution if present
+        has_missing_values = df_processed[selected_features].isnull().values.any() if selected_features else df_processed.isnull().values.any()
+        if has_missing_values:
+            missing_count = df_processed[selected_features].isnull().sum().sum() if selected_features else df_processed.isnull().sum().sum()
+            st.error(f"❌ Le dataset contient **{missing_count}** valeur(s) manquante(s) dans les features sélectionnées. "
+                    "Les algorithmes de clustering ne peuvent pas fonctionner avec des valeurs manquantes.")
+            st.info("💡 **Solution**: Retournez à la section **Prétraitement** et utilisez une stratégie pour gérer les valeurs manquantes "
+                   "(suppression, imputation par moyenne/médiane/mode, etc.)")
+            # Block execution but still show tabs for viewing previous results
+            tabs = st.tabs(["Visualisation 2D/3D", "Métriques", "Graphiques"])
+            with tabs[0]:
+                render_visualization_tab(df_processed, selected_features)
+            with tabs[1]:
+                render_metrics_tab()
+            with tabs[2]:
+                render_charts_tab(df_processed, selected_features)
+            st.stop()
 
         if df_processed.shape[0] > MAX_3D_POINTS:
             st.sidebar.info(f"Pour la visualisation 3D, échantillonnage à {MAX_3D_POINTS} points.")
