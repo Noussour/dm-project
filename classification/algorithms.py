@@ -34,7 +34,9 @@ def train_test_split_data(X: pd.DataFrame, y: pd.Series,
                           test_size: float = 0.2, 
                           random_state: int = 42) -> tuple:
     """
-    Split data into training and test sets.
+    Split data into training and test sets with stratification.
+    
+    Custom implementation without sklearn.
     
     Args:
         X: Feature DataFrame
@@ -45,9 +47,52 @@ def train_test_split_data(X: pd.DataFrame, y: pd.Series,
     Returns:
         Tuple of (X_train, X_test, y_train, y_test)
     """
-    from sklearn.model_selection import train_test_split
+    if random_state is not None:
+        np.random.seed(random_state)
     
-    return train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)
+    X_arr = np.array(X)
+    y_arr = np.array(y)
+    n_samples = len(y_arr)
+    
+    # Stratified split: maintain class proportions
+    classes = np.unique(y_arr)
+    
+    train_indices = []
+    test_indices = []
+    
+    for cls in classes:
+        cls_indices = np.where(y_arr == cls)[0]
+        np.random.shuffle(cls_indices)
+        
+        n_test = int(len(cls_indices) * test_size)
+        n_test = max(1, n_test)  # At least 1 sample in test
+        
+        test_indices.extend(cls_indices[:n_test])
+        train_indices.extend(cls_indices[n_test:])
+    
+    train_indices = np.array(train_indices)
+    test_indices = np.array(test_indices)
+    
+    # Shuffle to mix classes
+    np.random.shuffle(train_indices)
+    np.random.shuffle(test_indices)
+    
+    # Create results as DataFrames/Series if input was DataFrame/Series
+    if isinstance(X, pd.DataFrame):
+        X_train = X.iloc[train_indices]
+        X_test = X.iloc[test_indices]
+    else:
+        X_train = X_arr[train_indices]
+        X_test = X_arr[test_indices]
+    
+    if isinstance(y, pd.Series):
+        y_train = y.iloc[train_indices]
+        y_test = y.iloc[test_indices]
+    else:
+        y_train = y_arr[train_indices]
+        y_test = y_arr[test_indices]
+    
+    return X_train, X_test, y_train, y_test
 
 
 def run_classification(algo_name: str, params: dict, 

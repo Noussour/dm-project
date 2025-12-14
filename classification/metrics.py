@@ -1,6 +1,7 @@
 """
 Classification metrics utilities.
 
+Custom implementation from scratch.
 Computes evaluation metrics for classification:
 - Confusion Matrix (TP, TN, FP, FN)
 - Precision
@@ -9,15 +10,7 @@ Computes evaluation metrics for classification:
 """
 
 import numpy as np
-from sklearn.metrics import (
-    confusion_matrix,
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-    classification_report,
-)
-from typing import Union
+from typing import Union, List
 
 
 def compute_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray,
@@ -39,12 +32,26 @@ def compute_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray,
     Returns:
         Dictionary with confusion matrix and TP/TN/FP/FN values
     """
-    # Compute confusion matrix
-    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    
+    # Get unique labels
+    if labels is None:
+        labels = np.unique(np.concatenate([y_true, y_pred]))
+    labels = np.array(labels)
+    
+    n_labels = len(labels)
+    
+    # Create confusion matrix
+    cm = np.zeros((n_labels, n_labels), dtype=int)
+    
+    for i, true_label in enumerate(labels):
+        for j, pred_label in enumerate(labels):
+            cm[i, j] = np.sum((y_true == true_label) & (y_pred == pred_label))
     
     result = {
         "confusion_matrix": cm,
-        "labels": labels if labels is not None else np.unique(np.concatenate([y_true, y_pred])),
+        "labels": labels.tolist() if isinstance(labels, np.ndarray) else labels,
     }
     
     # For binary classification, extract TP, TN, FP, FN
@@ -56,10 +63,9 @@ def compute_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray,
         result["FN"] = int(fn)
     else:
         # For multiclass, compute per-class TP, TN, FP, FN
-        n_classes = cm.shape[0]
         per_class = {}
         
-        for i in range(n_classes):
+        for i in range(n_labels):
             tp = cm[i, i]
             fn = cm[i, :].sum() - tp
             fp = cm[:, i].sum() - tp
@@ -78,6 +84,148 @@ def compute_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray,
     return result
 
 
+def accuracy_score(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """
+    Compute accuracy: (TP + TN) / total.
+    
+    Args:
+        y_true: True labels
+        y_pred: Predicted labels
+        
+    Returns:
+        Accuracy score
+    """
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    return np.mean(y_true == y_pred)
+
+
+def precision_score(y_true: np.ndarray, y_pred: np.ndarray,
+                    average: str = "weighted", zero_division: int = 0) -> float:
+    """
+    Compute precision: TP / (TP + FP).
+    
+    Args:
+        y_true: True labels
+        y_pred: Predicted labels
+        average: Averaging method ('micro', 'macro', 'weighted', 'binary')
+        zero_division: Value to return when there's a zero division
+        
+    Returns:
+        Precision score
+    """
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    labels = np.unique(np.concatenate([y_true, y_pred]))
+    
+    if len(labels) == 2 and average == "binary":
+        # Binary case - assume positive class is labels[1]
+        tp = np.sum((y_true == labels[1]) & (y_pred == labels[1]))
+        fp = np.sum((y_true == labels[0]) & (y_pred == labels[1]))
+        return tp / (tp + fp) if (tp + fp) > 0 else zero_division
+    
+    precisions = []
+    supports = []
+    
+    for label in labels:
+        tp = np.sum((y_true == label) & (y_pred == label))
+        fp = np.sum((y_true != label) & (y_pred == label))
+        
+        prec = tp / (tp + fp) if (tp + fp) > 0 else zero_division
+        precisions.append(prec)
+        supports.append(np.sum(y_true == label))
+    
+    precisions = np.array(precisions)
+    supports = np.array(supports)
+    
+    if average == "micro":
+        total_tp = sum(np.sum((y_true == label) & (y_pred == label)) for label in labels)
+        total_fp = sum(np.sum((y_true != label) & (y_pred == label)) for label in labels)
+        return total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else zero_division
+    elif average == "macro":
+        return np.mean(precisions)
+    elif average == "weighted":
+        return np.average(precisions, weights=supports) if supports.sum() > 0 else zero_division
+    else:
+        return precisions
+
+
+def recall_score(y_true: np.ndarray, y_pred: np.ndarray,
+                 average: str = "weighted", zero_division: int = 0) -> float:
+    """
+    Compute recall: TP / (TP + FN).
+    
+    Args:
+        y_true: True labels
+        y_pred: Predicted labels
+        average: Averaging method ('micro', 'macro', 'weighted', 'binary')
+        zero_division: Value to return when there's a zero division
+        
+    Returns:
+        Recall score
+    """
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    labels = np.unique(np.concatenate([y_true, y_pred]))
+    
+    if len(labels) == 2 and average == "binary":
+        # Binary case
+        tp = np.sum((y_true == labels[1]) & (y_pred == labels[1]))
+        fn = np.sum((y_true == labels[1]) & (y_pred == labels[0]))
+        return tp / (tp + fn) if (tp + fn) > 0 else zero_division
+    
+    recalls = []
+    supports = []
+    
+    for label in labels:
+        tp = np.sum((y_true == label) & (y_pred == label))
+        fn = np.sum((y_true == label) & (y_pred != label))
+        
+        rec = tp / (tp + fn) if (tp + fn) > 0 else zero_division
+        recalls.append(rec)
+        supports.append(np.sum(y_true == label))
+    
+    recalls = np.array(recalls)
+    supports = np.array(supports)
+    
+    if average == "micro":
+        total_tp = sum(np.sum((y_true == label) & (y_pred == label)) for label in labels)
+        total_fn = sum(np.sum((y_true == label) & (y_pred != label)) for label in labels)
+        return total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else zero_division
+    elif average == "macro":
+        return np.mean(recalls)
+    elif average == "weighted":
+        return np.average(recalls, weights=supports) if supports.sum() > 0 else zero_division
+    else:
+        return recalls
+
+
+def f1_score(y_true: np.ndarray, y_pred: np.ndarray,
+             average: str = "weighted", zero_division: int = 0) -> float:
+    """
+    Compute F1 score: 2 * (precision * recall) / (precision + recall).
+    
+    Args:
+        y_true: True labels
+        y_pred: Predicted labels
+        average: Averaging method ('micro', 'macro', 'weighted', 'binary')
+        zero_division: Value to return when there's a zero division
+        
+    Returns:
+        F1 score
+    """
+    prec = precision_score(y_true, y_pred, average=average, zero_division=zero_division)
+    rec = recall_score(y_true, y_pred, average=average, zero_division=zero_division)
+    
+    if isinstance(prec, np.ndarray):
+        f1s = []
+        for p, r in zip(prec, rec):
+            f1s.append(2 * p * r / (p + r) if (p + r) > 0 else zero_division)
+        return np.array(f1s)
+    else:
+        return 2 * prec * rec / (prec + rec) if (prec + rec) > 0 else zero_division
+
+
 def compute_classification_metrics(y_true: np.ndarray, y_pred: np.ndarray,
                                    average: str = "weighted") -> dict:
     """
@@ -91,6 +239,9 @@ def compute_classification_metrics(y_true: np.ndarray, y_pred: np.ndarray,
     Returns:
         Dictionary with all computed metrics
     """
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    
     # Determine if binary or multiclass
     n_classes = len(np.unique(np.concatenate([y_true, y_pred])))
     
@@ -100,9 +251,9 @@ def compute_classification_metrics(y_true: np.ndarray, y_pred: np.ndarray,
     
     if n_classes == 2:
         # Binary classification
-        metrics["precision"] = float(precision_score(y_true, y_pred, zero_division=0))
-        metrics["recall"] = float(recall_score(y_true, y_pred, zero_division=0))
-        metrics["f1"] = float(f1_score(y_true, y_pred, zero_division=0))
+        metrics["precision"] = float(precision_score(y_true, y_pred, average="binary", zero_division=0))
+        metrics["recall"] = float(recall_score(y_true, y_pred, average="binary", zero_division=0))
+        metrics["f1"] = float(f1_score(y_true, y_pred, average="binary", zero_division=0))
     else:
         # Multiclass - compute multiple averages
         for avg in ["micro", "macro", "weighted"]:
@@ -131,6 +282,9 @@ def compute_all_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     Returns:
         Comprehensive dictionary with all metrics
     """
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    
     # Get unique labels
     labels = np.unique(np.concatenate([y_true, y_pred]))
     n_classes = len(labels)
@@ -227,7 +381,59 @@ def generate_classification_report(y_true: np.ndarray, y_pred: np.ndarray,
     Returns:
         Formatted classification report string
     """
-    return classification_report(y_true, y_pred, target_names=target_names, zero_division=0)
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    labels = np.unique(np.concatenate([y_true, y_pred]))
+    
+    if target_names is None:
+        target_names = [str(label) for label in labels]
+    
+    # Header
+    lines = [
+        "              precision    recall  f1-score   support",
+        ""
+    ]
+    
+    # Per-class metrics
+    total_support = 0
+    weighted_precision = 0
+    weighted_recall = 0
+    weighted_f1 = 0
+    
+    for i, (label, name) in enumerate(zip(labels, target_names)):
+        y_true_binary = (y_true == label).astype(int)
+        y_pred_binary = (y_pred == label).astype(int)
+        
+        tp = np.sum((y_true_binary == 1) & (y_pred_binary == 1))
+        fp = np.sum((y_true_binary == 0) & (y_pred_binary == 1))
+        fn = np.sum((y_true_binary == 1) & (y_pred_binary == 0))
+        
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+        support = np.sum(y_true == label)
+        
+        lines.append(f"{name:>12}       {precision:.2f}      {recall:.2f}      {f1:.2f}       {support}")
+        
+        total_support += support
+        weighted_precision += precision * support
+        weighted_recall += recall * support
+        weighted_f1 += f1 * support
+    
+    # Averages
+    lines.append("")
+    acc = accuracy_score(y_true, y_pred)
+    lines.append(f"    accuracy                           {acc:.2f}       {total_support}")
+    
+    if total_support > 0:
+        weighted_precision /= total_support
+        weighted_recall /= total_support
+        weighted_f1 /= total_support
+    
+    lines.append(f"   macro avg       {np.mean([l for l in precision_score(y_true, y_pred, average=None)]):.2f}      {np.mean([l for l in recall_score(y_true, y_pred, average=None)]):.2f}      {np.mean([l for l in f1_score(y_true, y_pred, average=None)]):.2f}       {total_support}")
+    lines.append(f"weighted avg       {weighted_precision:.2f}      {weighted_recall:.2f}      {weighted_f1:.2f}       {total_support}")
+    
+    return "\n".join(lines)
 
 
 def compute_precision_recall_curve_data(y_true: np.ndarray, 
@@ -244,17 +450,45 @@ def compute_precision_recall_curve_data(y_true: np.ndarray,
     Returns:
         Dictionary with precision, recall, and threshold values
     """
-    from sklearn.metrics import precision_recall_curve, average_precision_score
+    y_true = np.array(y_true)
+    y_scores = np.array(y_scores)
     
     # Convert to binary if needed
     y_binary = (y_true == pos_label).astype(int)
     
-    precision, recall, thresholds = precision_recall_curve(y_binary, y_scores)
-    avg_precision = average_precision_score(y_binary, y_scores)
+    # Sort by score descending
+    sorted_indices = np.argsort(y_scores)[::-1]
+    y_scores_sorted = y_scores[sorted_indices]
+    y_true_sorted = y_binary[sorted_indices]
+    
+    # Get unique thresholds
+    thresholds = np.unique(y_scores_sorted)[::-1]
+    
+    precisions = [1.0]
+    recalls = [0.0]
+    
+    for threshold in thresholds:
+        y_pred = (y_scores >= threshold).astype(int)
+        
+        tp = np.sum((y_binary == 1) & (y_pred == 1))
+        fp = np.sum((y_binary == 0) & (y_pred == 1))
+        fn = np.sum((y_binary == 1) & (y_pred == 0))
+        
+        prec = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        rec = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        
+        precisions.append(prec)
+        recalls.append(rec)
+    
+    precisions = np.array(precisions)
+    recalls = np.array(recalls)
+    
+    # Compute average precision
+    avg_precision = np.sum((recalls[1:] - recalls[:-1]) * precisions[1:])
     
     return {
-        "precision": precision,
-        "recall": recall,
+        "precision": precisions,
+        "recall": recalls,
         "thresholds": thresholds,
-        "average_precision": avg_precision,
+        "average_precision": float(avg_precision),
     }
